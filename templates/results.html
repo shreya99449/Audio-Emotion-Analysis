@@ -21,6 +21,18 @@
                                 <th scope="row" style="width: 30%">Filename</th>
                                 <td>{{ filename }}</td>
                             </tr>
+                            <tr>
+                                <th scope="row">Voice Gender</th>
+                                <td>
+                                    {% if gender == 'male' %}
+                                        <i class="fas fa-male text-info me-2"></i>Male
+                                    {% elif gender == 'female' %}
+                                        <i class="fas fa-female text-danger me-2"></i>Female
+                                    {% else %}
+                                        <i class="fas fa-question text-warning me-2"></i>Unknown
+                                    {% endif %}
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -82,7 +94,8 @@
                 <h4><i class="fas fa-info-circle me-2"></i>What Do These Results Mean?</h4>
             </div>
             <div class="card-body">
-                <p>The emotion analysis detects various emotional states in the audio:</p>
+                <p>The analysis detects both the emotional states and gender of the speaker in the audio:</p>
+                <h5 class="mt-3">Emotion Analysis</h5>
                 <ul>
                     <li><strong>Happy:</strong> Positive emotional tone, often with higher pitch and energy.</li>
                     <li><strong>Sad:</strong> Lower energy, sometimes with slower speech rate and lower pitch.</li>
@@ -91,6 +104,14 @@
                     <li><strong>Fearful:</strong> Often characterized by trembling voice, higher pitch, and irregular rhythm.</li>
                 </ul>
                 <p>The scores represent the probability or intensity of each emotion detected in the audio file.</p>
+                
+                <h5 class="mt-3">Gender Detection</h5>
+                <p>Voice gender is detected based on fundamental frequency (pitch) analysis:</p>
+                <ul>
+                    <li><strong>Male voices:</strong> Typically have a fundamental frequency between 85-180 Hz.</li>
+                    <li><strong>Female voices:</strong> Typically have a fundamental frequency between 165-255 Hz.</li>
+                </ul>
+                <p>This is a simplified approach and may not be accurate for all voices, especially those outside typical pitch ranges.</p>
             </div>
         </div>
     </div>

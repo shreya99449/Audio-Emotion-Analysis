@@ -6,6 +6,7 @@ class AudioFile(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     filepath = db.Column(db.String(512), nullable=False)
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    gender = db.Column(db.String(50), nullable=True, default='unknown')
     emotion_results = db.relationship('EmotionResult', backref='audio_file', lazy=True, cascade="all, delete-orphan")
     
     def __repr__(self):

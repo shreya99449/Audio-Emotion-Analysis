@@ -78,14 +78,15 @@ def upload_file():
         file.save(filepath)
         
         try:
-            # Process audio file and get emotions
-            emotions = process_audio_file(filepath)
+            # Process audio file and get emotions and gender
+            emotions, gender = process_audio_file(filepath)
             
             # Store file info and results in database
             audio_file = AudioFile(
                 filename=filename,
                 filepath=filepath,
-                upload_date=datetime.now()
+                upload_date=datetime.now(),
+                gender=gender
             )
             db.session.add(audio_file)
             db.session.flush()  # To get the audio_file.id
@@ -101,10 +102,11 @@ def upload_file():
             
             db.session.commit()
             
-            # Store the filename and emotions in session for the results page
+            # Store the filename, emotions and gender in session for the results page
             session['filename'] = filename
             session['emotions'] = emotions
             session['filepath'] = filepath
+            session['gender'] = gender
             
             return redirect(url_for('results'))
         except Exception as e:
@@ -123,8 +125,9 @@ def results():
     
     filename = session.get('filename')
     emotions = session.get('emotions')
+    gender = session.get('gender', 'unknown')
     
-    return render_template('results.html', filename=filename, emotions=emotions)
+    return render_template('results.html', filename=filename, emotions=emotions, gender=gender)
 
 # Initialize database within app context
 with app.app_context():

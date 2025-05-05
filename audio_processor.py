@@ -11,8 +11,8 @@ logging.basicConfig(level=logging.DEBUG)
 # It uses the file content hash rather than the file path for deterministic results
 def process_audio_file(file_path):
     """
-    Process an audio file and detect emotions.
-    This uses file content to consistently generate the same emotion values for the same audio file.
+    Process an audio file and detect emotions and gender.
+    This uses file content to consistently generate the same values for the same audio file.
     
     In a production environment, this would be replaced with a real ML model.
     
@@ -20,7 +20,9 @@ def process_audio_file(file_path):
         file_path (str): Path to the audio file
         
     Returns:
-        dict: Dictionary of emotions and their scores
+        tuple: (emotions_dict, gender_prediction)
+            - emotions_dict: Dictionary of emotions and their scores
+            - gender_prediction: String indicating 'male' or 'female'
     """
     logging.info(f"Processing audio file: {file_path}")
     
@@ -30,6 +32,9 @@ def process_audio_file(file_path):
     
     # Get a hash of the file content to ensure the same file always produces the same results
     file_hash = get_file_hash(file_path)
+    
+    # Default gender in case of processing failure
+    gender = "unknown"
     
     # A more advanced implementation would use librosa for real audio analysis
     try:
@@ -48,6 +53,18 @@ def process_audio_file(file_path):
         
         # Zero crossing rate can relate to noisiness/speech
         zero_crossing = np.mean(librosa.feature.zero_crossing_rate(y))
+        
+        # Estimate the fundamental frequency (pitch) for gender detection
+        # This is a very simplified approach to gender detection
+        pitches, magnitudes = librosa.core.piptrack(y=y, sr=sr)
+        pitch = get_average_pitch(pitches, magnitudes)
+        
+        # Simple gender classification based on pitch
+        # Average male fundamental frequency: ~120Hz
+        # Average female fundamental frequency: ~210Hz
+        gender = detect_gender(pitch)
+        
+        logging.info(f"Estimated pitch: {pitch:.2f} Hz, Detected gender: {gender}")
         
         # Use features to seed random generator along with file hash
         seed_value = int(hashlib.sha256(f"{file_hash}{amplitude}{spectral_centroid}{zero_crossing}".encode()).hexdigest(), 16) % 2**32
@@ -86,14 +103,68 @@ def process_audio_file(file_path):
             "neutral": round(float(np.random.uniform(0, 1)), 2),
             "fearful": round(float(np.random.uniform(0, 1)), 2)
         }
+        
+        # Set gender based on hash value when we can't analyze audio
+        gender = "male" if int(file_hash, 16) % 2 == 0 else "female"
     
     # Normalize the scores so they sum to 1
     total = sum(emotions.values())
     for emotion in emotions:
         emotions[emotion] = round(emotions[emotion] / total, 2)
     
-    logging.info(f"Detected emotions: {emotions}")
-    return emotions
+    logging.info(f"Detected emotions: {emotions}, Gender: {gender}")
+    return emotions, gender
+
+
+def get_average_pitch(pitches, magnitudes):
+    """
+    Calculate the average pitch from the pitch track data.
+    Only considers pitches with significant magnitudes.
+    
+    Args:
+        pitches: Pitch values from librosa.piptrack
+        magnitudes: Magnitude values from librosa.piptrack
+        
+    Returns:
+        float: Average pitch in Hz
+    """
+    # Find pitches with non-zero magnitudes
+    valid_pitches = []
+    pitch_threshold = 0.1  # Threshold for magnitude
+    
+    for i in range(pitches.shape[1]):  # For each time frame
+        index = magnitudes[:, i].argmax()  # Find the frequency bin with highest magnitude
+        pitch = pitches[index, i]  # Get the corresponding pitch
+        magnitude = magnitudes[index, i]  # Get the magnitude
+        
+        # Only consider pitches with significant magnitude and within human vocal range (80-400 Hz)
+        if magnitude > pitch_threshold and 80 < pitch < 400:
+            valid_pitches.append(pitch)
+    
+    # Return the average pitch if we have valid pitches, otherwise default to 170 Hz (middle range)
+    return np.mean(valid_pitches) if valid_pitches else 170.0
+
+
+def detect_gender(pitch):
+    """
+    Detect gender based on pitch.
+    This is a very simplified approach using average vocal pitch ranges.
+    
+    Args:
+        pitch (float): Estimated average pitch in Hz
+        
+    Returns:
+        str: 'male' or 'female'
+    """
+    # Average adult male voice: 85 to 180 Hz
+    # Average adult female voice: 165 to 255 Hz
+    # We'll use 165 Hz as a simple threshold
+    threshold = 165.0
+    
+    if pitch < threshold:
+        return "male"
+    else:
+        return "female"
 
 
 def get_file_hash(file_path, read_size=8192):
@@ -117,6 +188,6 @@ def get_file_hash(file_path, read_size=8192):
 
 # Future improvements:
 # 1. Implement actual emotion detection model using deep learning
-# 2. Add support for batch processing
-# 3. Implement caching for processed files
-# 4. Add more sophisticated audio feature extraction
+# 2. Improve gender detection using more sophisticated vocal features
+# 3. Add support for batch processing
+# 4. Implement caching for processed files
