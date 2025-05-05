@@ -54,6 +54,16 @@ This Flask web application allows users to upload audio files and perform sophis
    ```bash
    pip install -r requirements_for_vscode.txt
    ```
+6. Run the setup script to prepare your environment:
+   ```bash
+   python setup_vscode.py
+   ```
+   This script will:
+   - Check your Python version
+   - Create all necessary directories
+   - Set up VS Code configuration files
+   - Verify dependencies
+   - Create a test environment
 
 ### Running the Application
 
@@ -63,6 +73,8 @@ This Flask web application allows users to upload audio files and perform sophis
    python run.py
    ```
 3. Open a web browser and navigate to `http://localhost:5000`
+
+> **Having issues?** Check the [Troubleshooting Guide](TROUBLESHOOTING.md) for solutions to common problems.
 
 ## Usage
 
