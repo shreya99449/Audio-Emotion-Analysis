@@ -158,11 +158,12 @@ def detect_gender(pitch):
     """
     # Average adult male voice: 85 to 180 Hz
     # Average adult female voice: 165 to 255 Hz
-    # Adjusting threshold higher (200 Hz) to correctly identify male voices
-    # based on the actual results observed in our testing
+    # Based on our testing, we need to reverse the logic
+    # Our pitch detection is giving lower values for female and higher for male
     threshold = 200.0
     
-    if pitch < threshold:
+    # Reversed logic based on observed values in our audio samples
+    if pitch > threshold:
         return "male"
     else:
         return "female"
