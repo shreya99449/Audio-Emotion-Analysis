@@ -3,40 +3,118 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-10">  <!-- Increased width to accommodate more content -->
-        <div class="card bg-dark border-secondary">
-            <div class="card-header text-center">
-                <h2><i class="fas fa-chart-pie me-2"></i>Advanced Voice Analysis Results</h2>
+        <div class="card bg-dark border-secondary shadow-lg">
+            <div class="card-header p-4 bg-gradient" style="background: linear-gradient(135deg, #141e30, #243b55);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="m-0"><i class="fas fa-chart-pie me-2 text-info"></i>Voice Analysis Results</h2>
+                        <p class="text-light mt-2 mb-0">Advanced emotion and voice characteristic detection</p>
+                    </div>
+                    <div class="bg-dark p-3 rounded-pill d-none d-md-block">
+                        <span class="badge bg-secondary p-2 me-1"><i class="fas fa-microphone-alt me-1"></i>Audio</span>
+                        <span class="badge bg-info p-2 me-1"><i class="fas fa-brain me-1"></i>AI</span>
+                        <span class="badge bg-primary p-2"><i class="fas fa-chart-bar me-1"></i>Analytics</span>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
-                <div class="alert alert-success">
-                    <h5><i class="fas fa-check-circle me-2"></i>Analysis Complete</h5>
-                    <p>We've analyzed your audio file and detected voice characteristics, emotions, and age estimate:</p>
+                <div class="alert alert-success p-4 border-start border-success border-5">
+                    <div class="d-flex">
+                        <div class="display-1 me-3">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                        <div>
+                            <h4 class="alert-heading mb-2">Analysis Complete</h4>
+                            <p class="mb-0">Our AI has analyzed your audio file and detected the following voice characteristics, emotions, and age estimate:</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="file-info mb-4">
-                    <h5><i class="fas fa-file-audio me-2"></i>File Information</h5>
-                    <table class="table table-dark">
-                        <tbody>
-                            <tr>
-                                <th scope="row" style="width: 30%">Filename</th>
-                                <td>{{ filename }}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Age Estimate</th>
-                                <td>
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="bg-gradient badge bg-primary text-white p-2 me-2">
+                            <i class="fas fa-file-audio"></i>
+                        </span>
+                        <h5 class="m-0">File Analysis Summary</h5>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <!-- File details card -->
+                        <div class="col-md-4">
+                            <div class="card bg-dark h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-file-audio fa-3x text-primary mb-3"></i>
+                                    <h6 class="card-title">Audio File</h6>
+                                    <p class="card-text text-truncate">{{ filename }}</p>
+                                    <small class="text-muted">Uploaded: {{ upload_date }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Age estimate card -->
+                        <div class="col-md-4">
+                            <div class="card bg-dark h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user-clock fa-3x text-info mb-3"></i>
+                                    <h6 class="card-title">Age Estimate</h6>
                                     {% if age_estimate %}
-                                        <i class="fas fa-user-clock text-info me-2"></i>{{ age_estimate }}
+                                        <p class="card-text">{{ age_estimate }}</p>
+                                        <div class="progress mt-2">
+                                            <div class="progress-bar bg-info" style="width: {{ age_confidence * 100 }}%" role="progressbar" aria-valuenow="{{ age_confidence * 100 }}" aria-valuemin="0" aria-valuemax="100">{{ (age_confidence * 100)|int }}% confidence</div>
+                                        </div>
                                     {% else %}
-                                        <i class="fas fa-question text-warning me-2"></i>Unknown
+                                        <p class="card-text text-warning">Unknown</p>
+                                        <small class="text-muted">Insufficient data for age detection</small>
                                     {% endif %}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Upload Date</th>
-                                <td><i class="fas fa-calendar-alt me-2"></i>{{ upload_date }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Primary emotion card -->
+                        <div class="col-md-4">
+                            <div class="card bg-dark h-100 
+                            {% set primary_emotion = emotions|dictsort(by='value')|reverse|first %}
+                            {% if primary_emotion[0] == 'happy' %}border-success
+                            {% elif primary_emotion[0] == 'sad' %}border-info
+                            {% elif primary_emotion[0] == 'angry' %}border-danger
+                            {% elif primary_emotion[0] == 'neutral' %}border-secondary
+                            {% elif primary_emotion[0] == 'fearful' %}border-warning
+                            {% elif primary_emotion[0] == 'surprised' %}border-primary
+                            {% elif primary_emotion[0] == 'disgusted' %}border-purple
+                            {% elif primary_emotion[0] == 'calm' %}border-teal
+                            {% elif primary_emotion[0] == 'excited' %}border-orange
+                            {% else %}border-light{% endif %}">
+                                <div class="card-body text-center">
+                                    <i class="fas 
+                                    {% if primary_emotion[0] == 'happy' %}fa-smile text-success
+                                    {% elif primary_emotion[0] == 'sad' %}fa-frown text-info
+                                    {% elif primary_emotion[0] == 'angry' %}fa-angry text-danger
+                                    {% elif primary_emotion[0] == 'neutral' %}fa-meh text-secondary
+                                    {% elif primary_emotion[0] == 'fearful' %}fa-grimace text-warning
+                                    {% elif primary_emotion[0] == 'surprised' %}fa-surprise text-primary
+                                    {% elif primary_emotion[0] == 'disgusted' %}fa-dizzy text-purple
+                                    {% elif primary_emotion[0] == 'calm' %}fa-meditation text-teal
+                                    {% elif primary_emotion[0] == 'excited' %}fa-grin-stars text-orange
+                                    {% endif %} fa-3x mb-3"></i>
+                                    <h6 class="card-title">Primary Emotion</h6>
+                                    <p class="card-text">{{ primary_emotion[0]|capitalize }}</p>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar 
+                                        {% if primary_emotion[0] == 'happy' %}bg-success
+                                        {% elif primary_emotion[0] == 'sad' %}bg-info
+                                        {% elif primary_emotion[0] == 'angry' %}bg-danger
+                                        {% elif primary_emotion[0] == 'neutral' %}bg-secondary
+                                        {% elif primary_emotion[0] == 'fearful' %}bg-warning
+                                        {% elif primary_emotion[0] == 'surprised' %}bg-primary
+                                        {% elif primary_emotion[0] == 'disgusted' %}bg-purple
+                                        {% elif primary_emotion[0] == 'calm' %}bg-teal
+                                        {% elif primary_emotion[0] == 'excited' %}bg-orange
+                                        {% endif %}" style="width: {{ primary_emotion[1] * 100 }}%" role="progressbar" aria-valuenow="{{ primary_emotion[1] * 100 }}" aria-valuemin="0" aria-valuemax="100">{{ (primary_emotion[1] * 100)|int }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Voice Characteristics Section -->
@@ -224,32 +302,49 @@
                 
                 <!-- Emotion Detection Section -->
                 <div class="emotion-detection mb-4">
-                    <h5><i class="fas fa-brain me-2"></i>ML-Powered Emotion Detection</h5>
-                    <div class="alert alert-secondary">
-                        <i class="fas fa-info-circle me-2"></i>Our machine learning model analyzed <strong>9 distinct emotions</strong> in this recording, with results shown below.
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="bg-gradient badge bg-success text-white p-2 me-2">
+                            <i class="fas fa-brain"></i>
+                        </span>
+                        <h5 class="m-0">AI Emotion Analysis</h5>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-12 mb-2">
-                            <h6 class="border-bottom pb-2"><i class="fas fa-star me-2"></i>Primary Emotion: 
-                                {% set primary_emotion = emotions|dictsort(by='value')|reverse|first %}
-                                <span class="badge 
-                                {% if primary_emotion[0] == 'happy' %}bg-success
-                                {% elif primary_emotion[0] == 'sad' %}bg-info
-                                {% elif primary_emotion[0] == 'angry' %}bg-danger
-                                {% elif primary_emotion[0] == 'neutral' %}bg-secondary
-                                {% elif primary_emotion[0] == 'fearful' %}bg-warning
-                                {% elif primary_emotion[0] == 'surprised' %}bg-primary
-                                {% elif primary_emotion[0] == 'disgusted' %}bg-purple
-                                {% elif primary_emotion[0] == 'calm' %}bg-teal
-                                {% elif primary_emotion[0] == 'excited' %}bg-orange
-                                {% endif %} p-2">
-                                    {{ primary_emotion[0]|capitalize }} ({{ (primary_emotion[1] * 100)|round(1) }}%)
-                                </span>
-                            </h6>
+                    
+                    <div class="alert bg-gradient p-4 mb-4" style="background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); border: none;">
+                        <div class="d-flex align-items-start">
+                            <div class="display-4 me-3 text-white">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="text-white">
+                                <h5 class="mb-2">Advanced Emotion Detection</h5>
+                                <p class="mb-0">Our machine learning model analyzed <strong>9 distinct emotions</strong> in your voice, revealing patterns in tone, pitch, and speech characteristics that indicate your emotional state.</p>
+                            </div>
                         </div>
+                    </div>
+                    
+                    <div class="row">
                         <div class="col-md-6">
-                            <div class="chart-container" style="position: relative; height: 300px;">
-                                <canvas id="emotionChart"></canvas>
+                            <!-- Add tabs for different chart types -->
+                            <ul class="nav nav-pills mb-3" id="chartTypeTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="pie-tab" data-bs-toggle="pill" data-bs-target="#pie-chart" type="button" role="tab" aria-controls="pie-chart" aria-selected="true">Pie Chart</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="radar-tab" data-bs-toggle="pill" data-bs-target="#radar-chart" type="button" role="tab" aria-controls="radar-chart" aria-selected="false">Radar Chart</button>
+                                </li>
+                            </ul>
+                            
+                            <!-- Tab content -->
+                            <div class="tab-content" id="chartTypeTabsContent">
+                                <div class="tab-pane fade show active" id="pie-chart" role="tabpanel" aria-labelledby="pie-tab">
+                                    <div class="chart-container" style="position: relative; height: 300px;">
+                                        <canvas id="emotionPieChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="radar-chart" role="tabpanel" aria-labelledby="radar-tab">
+                                    <div class="chart-container" style="position: relative; height: 300px;">
+                                        <canvas id="emotionRadarChart"></canvas>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -302,32 +397,80 @@
                 
                 <!-- Activity Recommendations Section -->
                 <div class="activity-recommendations mb-4">
-                    <h5><i class="fas fa-tasks me-2"></i>Personalized Activity Recommendations</h5>
-                    <div class="alert alert-info">
-                        <i class="fas fa-lightbulb me-2"></i>Based on your detected mood, we recommend these activities to enhance your well-being:
+                    <h5 class="d-flex align-items-center mb-3">
+                        <span class="bg-gradient badge bg-info text-white p-2 me-2">
+                            <i class="fas fa-lightbulb"></i>
+                        </span>
+                        <span>Personalized Activity Recommendations</span>
+                    </h5>
+                    
+                    <div class="alert alert-info p-3 border-start border-info border-5">
+                        <div class="d-flex align-items-start">
+                            <div class="display-4 me-3">
+                                <i class="fas fa-brain text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-2">Mood-Based Recommendations</h5>
+                                <p class="mb-0">Based on your detected emotional profile, our AI has generated personalized activities to enhance your current state:</p>
+                            </div>
+                        </div>
                     </div>
                     
                     {% if recommendations %}
                     <div class="row row-cols-1 row-cols-md-3 g-4">
                         {% for recommendation in recommendations %}
+                        {% set icon_class = 'fa-star' %}
+                        {% set card_color = 'bg-dark' %}
+                        {% set text_color = '' %}
+                        {% set gradient = '' %}
+                        
+                        {% if 'meditate' in recommendation|lower or 'breathing' in recommendation|lower %}
+                            {% set icon_class = 'fa-om' %}
+                            {% set card_color = 'bg-gradient' %}
+                            {% set gradient = 'background: linear-gradient(135deg, #20234f, #444b8a);' %}
+                        {% elif 'listen' in recommendation|lower or 'music' in recommendation|lower %}
+                            {% set icon_class = 'fa-music' %}
+                            {% set card_color = 'bg-gradient' %}
+                            {% set gradient = 'background: linear-gradient(135deg, #5f2c82, #49a09d);' %}
+                        {% elif 'exercise' in recommendation|lower or 'walk' in recommendation|lower %}
+                            {% set icon_class = 'fa-running' %}
+                            {% set card_color = 'bg-gradient' %}
+                            {% set gradient = 'background: linear-gradient(135deg, #11998e, #38ef7d);' %}
+                            {% set text_color = 'text-dark' %}
+                        {% elif 'journal' in recommendation|lower or 'write' in recommendation|lower %}
+                            {% set icon_class = 'fa-pen-fancy' %}
+                            {% set card_color = 'bg-gradient' %}
+                            {% set gradient = 'background: linear-gradient(135deg, #2980b9, #2c3e50);' %}
+                        {% elif 'socialize' in recommendation|lower or 'friend' in recommendation|lower %}
+                            {% set icon_class = 'fa-users' %}
+                            {% set card_color = 'bg-gradient' %}
+                            {% set gradient = 'background: linear-gradient(135deg, #ff416c, #ff4b2b);' %}
+                        {% elif 'hobby' in recommendation|lower or 'creative' in recommendation|lower %}
+                            {% set icon_class = 'fa-palette' %}
+                            {% set card_color = 'bg-gradient' %}
+                            {% set gradient = 'background: linear-gradient(135deg, #654ea3, #eaafc8);' %}
+                        {% elif 'nature' in recommendation|lower or 'outside' in recommendation|lower %}
+                            {% set icon_class = 'fa-tree' %}
+                            {% set card_color = 'bg-gradient' %}
+                            {% set gradient = 'background: linear-gradient(135deg, #076585, #0c9);' %}
+                        {% elif 'sleep' in recommendation|lower or 'rest' in recommendation|lower %}
+                            {% set icon_class = 'fa-bed' %}
+                            {% set card_color = 'bg-gradient' %}
+                            {% set gradient = 'background: linear-gradient(135deg, #141e30, #243b55);' %}
+                        {% endif %}
+                        
                         <div class="col">
-                            <div class="card h-100 bg-dark border-secondary">
-                                <div class="card-body">
+                            <div class="card h-100 {{ card_color }} shadow" {% if gradient %}style="{{ gradient }}"{% endif %}>
+                                <div class="card-body {{ text_color }}">
+                                    <div class="mb-3">
+                                        <span class="rounded-circle d-inline-flex justify-content-center align-items-center p-3" style="width: 50px; height: 50px; background-color: rgba(255,255,255,0.2);">
+                                            <i class="fas {{ icon_class }} fa-lg"></i>
+                                        </span>
+                                    </div>
                                     <h5 class="card-title">
-                                        <i class="fas 
-                                        {% if 'meditate' in recommendation|lower or 'breathing' in recommendation|lower %}fa-om
-                                        {% elif 'listen' in recommendation|lower or 'music' in recommendation|lower %}fa-music
-                                        {% elif 'exercise' in recommendation|lower or 'walk' in recommendation|lower %}fa-running
-                                        {% elif 'journal' in recommendation|lower or 'write' in recommendation|lower %}fa-pen-fancy
-                                        {% elif 'socialize' in recommendation|lower or 'friend' in recommendation|lower %}fa-users
-                                        {% elif 'hobby' in recommendation|lower or 'creative' in recommendation|lower %}fa-palette
-                                        {% elif 'nature' in recommendation|lower or 'outside' in recommendation|lower %}fa-tree
-                                        {% elif 'sleep' in recommendation|lower or 'rest' in recommendation|lower %}fa-bed
-                                        {% else %}fa-star
-                                        {% endif %} me-2"></i>
                                         {{ recommendation.split(':')[0] if ':' in recommendation else recommendation }}
                                     </h5>
-                                    <p class="card-text">
+                                    <p class="card-text mt-3 opacity-90">
                                         {% if ':' in recommendation %}
                                             {{ recommendation.split(':', 1)[1] }}
                                         {% else %}
@@ -347,9 +490,17 @@
                 </div>
                 
                 <!-- Disclaimer -->
-                <div class="disclaimer text-center mt-4">
-                    <div class="alert alert-dark" role="alert">
-                        <i class="fas fa-lightbulb me-2"></i> <strong>Note:</strong> This analysis provides a simplified approximation of voice characteristics and emotions. In production environments, sophisticated machine learning models would be employed for more accurate results.
+                <div class="disclaimer text-center mt-5">
+                    <div class="card bg-dark border-0 shadow-lg" style="background: linear-gradient(135deg, #141e30, #243b55);">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-center mb-3">
+                                <div class="rounded-circle bg-light p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-info text-primary fa-2x"></i>
+                                </div>
+                            </div>
+                            <h5 class="card-title">About This Analysis</h5>
+                            <p class="card-text mb-0">This analysis uses machine learning to estimate emotions from voice patterns. While not clinically validated, our models provide useful insights into vocal characteristics and emotional tones. The recommendations are provided as general suggestions based on detected emotional patterns.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -361,7 +512,7 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Prepare data for the chart
+        // Prepare data for the charts
         const emotions = {{ emotions|tojson }};
         const labels = Object.keys(emotions).map(emotion => emotion.charAt(0).toUpperCase() + emotion.slice(1));
         const scores = Object.values(emotions);
@@ -381,10 +532,11 @@
         
         // Create the colors array in the same order as labels
         const colors = labels.map(label => backgroundColors[label] || 'rgba(108, 117, 125, 0.7)');
+        const borderColors = labels.map(label => backgroundColors[label]?.replace('0.7', '1') || 'rgba(108, 117, 125, 1)');
         
-        // Create the chart
-        const ctx = document.getElementById('emotionChart').getContext('2d');
-        const emotionChart = new Chart(ctx, {
+        // Create the pie chart
+        const pieCtx = document.getElementById('emotionPieChart').getContext('2d');
+        const emotionPieChart = new Chart(pieCtx, {
             type: 'pie',
             data: {
                 labels: labels,
@@ -400,7 +552,7 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom',
+                        position: 'right',
                         labels: {
                             color: 'white',
                             font: {
@@ -415,6 +567,85 @@
                                 const value = context.formattedValue;
                                 return `${label}: ${value}`;
                             }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Emotion Distribution',
+                        color: 'white',
+                        font: {
+                            size: 16
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Create the radar chart
+        const radarCtx = document.getElementById('emotionRadarChart').getContext('2d');
+        const emotionRadarChart = new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Emotion Intensity',
+                    data: scores,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: colors,
+                    pointBorderColor: borderColors,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: borderColors,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.2)'
+                        },
+                        pointLabels: {
+                            color: 'white',
+                            font: {
+                                size: 12
+                            }
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            backdropColor: 'transparent',
+                            showLabelBackdrop: false
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 1
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.formattedValue;
+                                return `${label}: ${value}`;
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Emotion Intensity Profile',
+                        color: 'white',
+                        font: {
+                            size: 16
                         }
                     }
                 }
