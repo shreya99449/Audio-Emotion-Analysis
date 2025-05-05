@@ -43,7 +43,10 @@
                                 <td>
                                     {% set emotions = entry.emotions %}
                                     {% set sorted_emotions = emotions.items()|sort(reverse=True, attribute='1')|list %}
-                                    {% set top_emotions = {k: v for k, v in sorted_emotions[:3]} %}
+                                    {% set top_emotions = {} %}
+                                    {% for k, v in sorted_emotions[:3] %}
+                                        {% set _ = top_emotions.update({k: v}) %}
+                                    {% endfor %}
                                     {% for emotion, score in top_emotions.items() %}
                                         <span class="badge {% if emotion == 'happy' %}bg-success
                                             {% elif emotion == 'sad' %}bg-info
