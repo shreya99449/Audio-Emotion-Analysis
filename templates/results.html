@@ -250,6 +250,10 @@
                                                 {% elif emotion == 'sad' %}bg-info
                                                 {% elif emotion == 'angry' %}bg-danger
                                                 {% elif emotion == 'fearful' %}bg-warning
+                                                {% elif emotion == 'surprised' %}bg-purple
+                                                {% elif emotion == 'disgusted' %}bg-indigo
+                                                {% elif emotion == 'calm' %}bg-teal
+                                                {% elif emotion == 'excited' %}bg-orange
                                                 {% else %}bg-secondary{% endif %}" 
                                                 role="progressbar" 
                                                 style="width: {{ (score * 100)|int }}%" 
