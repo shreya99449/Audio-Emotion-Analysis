@@ -18,7 +18,7 @@
                             <tr>
                                 <th>File</th>
                                 <th>Date</th>
-                                <th>Voice Gender</th>
+                                <th>Age Estimate</th>
                                 <th>Top Emotions</th>
                                 <th>Pitch</th>
                                 <th>Actions</th>
@@ -30,15 +30,9 @@
                                 <td>{{ entry.filename }}</td>
                                 <td>{{ entry.upload_date }}</td>
                                 <td>
-                                    {% if entry.gender == 'male' %}
+                                    {% if entry.age_estimate %}
                                         <span class="badge bg-info">
-                                            <i class="fas fa-male me-1"></i>Male
-                                            <span class="small">({{ (entry.gender_confidence * 100)|int }}%)</span>
-                                        </span>
-                                    {% elif entry.gender == 'female' %}
-                                        <span class="badge bg-danger">
-                                            <i class="fas fa-female me-1"></i>Female
-                                            <span class="small">({{ (entry.gender_confidence * 100)|int }}%)</span>
+                                            <i class="fas fa-user-clock me-1"></i>{{ entry.age_estimate }}
                                         </span>
                                     {% else %}
                                         <span class="badge bg-secondary">

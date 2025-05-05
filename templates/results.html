@@ -202,28 +202,28 @@
                     <div class="tab-content p-3 border border-secondary" id="audioVisualizationTabContent">
                         {% if 'waveform' in plots_urls %}
                         <div class="tab-pane fade show active text-center" id="waveform" role="tabpanel" aria-labelledby="waveform-tab">
-                            <img src="{{ plots_urls.waveform }}" alt="Audio Waveform" class="img-fluid">
-                            <p class="text-secondary mt-2">The waveform shows the amplitude (loudness) of sound over time</p>
+                            <img src="{{ plots_urls.waveform }}" alt="Waveform visualization" class="img-fluid">
+                            <p class="text-muted mt-2">Waveform: Amplitude vs. Time representation of the audio signal</p>
                         </div>
                         {% endif %}
                         {% if 'spectrogram' in plots_urls %}
                         <div class="tab-pane fade text-center" id="spectrogram" role="tabpanel" aria-labelledby="spectrogram-tab">
-                            <img src="{{ plots_urls.spectrogram }}" alt="Audio Spectrogram" class="img-fluid">
-                            <p class="text-secondary mt-2">The spectrogram displays frequency content over time, revealing tonal patterns</p>
+                            <img src="{{ plots_urls.spectrogram }}" alt="Spectrogram visualization" class="img-fluid">
+                            <p class="text-muted mt-2">Spectrogram: Time-Frequency-Intensity representation of the audio</p>
                         </div>
                         {% endif %}
                         {% if 'mfcc' in plots_urls %}
                         <div class="tab-pane fade text-center" id="mfcc" role="tabpanel" aria-labelledby="mfcc-tab">
-                            <img src="{{ plots_urls.mfcc }}" alt="MFCC Visualization" class="img-fluid">
-                            <p class="text-secondary mt-2">MFCCs (Mel-Frequency Cepstral Coefficients) represent vocal characteristics similar to how humans perceive sound</p>
+                            <img src="{{ plots_urls.mfcc }}" alt="MFCC visualization" class="img-fluid">
+                            <p class="text-muted mt-2">MFCC: Mel-Frequency Cepstral Coefficients used for voice characteristic analysis</p>
                         </div>
                         {% endif %}
                     </div>
                 </div>
                 {% endif %}
                 
-                <!-- Emotion Analysis Section -->
-                <div class="emotion-analysis mb-4">
+                <!-- Emotion Detection Section -->
+                <div class="emotion-detection mb-4">
                     <h5><i class="fas fa-brain me-2"></i>ML-Powered Emotion Detection</h5>
                     <div class="alert alert-secondary">
                         <i class="fas fa-info-circle me-2"></i>Our machine learning model analyzed <strong>9 distinct emotions</strong> in this recording, with results shown below.
@@ -236,137 +236,68 @@
                                 {% if primary_emotion[0] == 'happy' %}bg-success
                                 {% elif primary_emotion[0] == 'sad' %}bg-info
                                 {% elif primary_emotion[0] == 'angry' %}bg-danger
-                                {% elif primary_emotion[0] == 'fearful' %}bg-warning text-dark
+                                {% elif primary_emotion[0] == 'neutral' %}bg-secondary
+                                {% elif primary_emotion[0] == 'fearful' %}bg-warning
                                 {% elif primary_emotion[0] == 'surprised' %}bg-primary
-                                {% elif primary_emotion[0] == 'disgusted' %}bg-secondary
-                                {% elif primary_emotion[0] == 'neutral' %}bg-light text-dark
-                                {% elif primary_emotion[0] == 'calm' %}bg-info text-dark
-                                {% elif primary_emotion[0] == 'excited' %}bg-warning
-                                {% else %}bg-secondary{% endif %}">{{ primary_emotion[0]|capitalize }}</span>
-                                <span class="text-muted">({{ (primary_emotion[1] * 100)|int }}% confidence)</span>
+                                {% elif primary_emotion[0] == 'disgusted' %}bg-purple
+                                {% elif primary_emotion[0] == 'calm' %}bg-teal
+                                {% elif primary_emotion[0] == 'excited' %}bg-orange
+                                {% endif %} p-2">
+                                    {{ primary_emotion[0]|capitalize }} ({{ (primary_emotion[1] * 100)|round(1) }}%)
+                                </span>
                             </h6>
                         </div>
-                    </div>
-                    <div class="row">
                         <div class="col-md-6">
-                            <h6><i class="fas fa-list-ol me-2"></i>Emotion ML Model Results</h6>
-                            <table class="table table-dark">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" style="width: 25%">Emotion</th>
-                                        <th scope="col" style="width: 75%">ML Detection Score</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for emotion, score in emotions|dictsort(by='value')|reverse %}
-                                    <tr>
-                                        <td>
-                                            <span class="badge 
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="emotionChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2">Emotion Breakdown</h6>
+                            <ul class="list-group">
+                                {% for emotion, score in emotions|dictsort(by='value')|reverse %}
+                                <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas 
+                                        {% if emotion == 'happy' %}fa-smile text-success
+                                        {% elif emotion == 'sad' %}fa-frown text-info
+                                        {% elif emotion == 'angry' %}fa-angry text-danger
+                                        {% elif emotion == 'neutral' %}fa-meh text-secondary
+                                        {% elif emotion == 'fearful' %}fa-grimace text-warning
+                                        {% elif emotion == 'surprised' %}fa-surprise text-primary
+                                        {% elif emotion == 'disgusted' %}fa-dizzy text-purple
+                                        {% elif emotion == 'calm' %}fa-meditation text-teal
+                                        {% elif emotion == 'excited' %}fa-grin-stars text-orange
+                                        {% endif %} me-2"></i>
+                                        {{ emotion|capitalize }}
+                                    </span>
+                                    <div class="d-flex align-items-center" style="width: 60%;">
+                                        <div class="progress flex-grow-1">
+                                            <div class="progress-bar 
                                             {% if emotion == 'happy' %}bg-success
                                             {% elif emotion == 'sad' %}bg-info
                                             {% elif emotion == 'angry' %}bg-danger
-                                            {% elif emotion == 'fearful' %}bg-warning text-dark
+                                            {% elif emotion == 'neutral' %}bg-secondary
+                                            {% elif emotion == 'fearful' %}bg-warning
                                             {% elif emotion == 'surprised' %}bg-primary
-                                            {% elif emotion == 'disgusted' %}bg-secondary
-                                            {% elif emotion == 'neutral' %}bg-light text-dark
-                                            {% elif emotion == 'calm' %}bg-info text-dark
-                                            {% elif emotion == 'excited' %}bg-warning
-                                            {% else %}bg-secondary{% endif %}">
-                                                {{ emotion|capitalize }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1" style="height: 24px;">
-                                                    <div class="progress-bar 
-                                                    {% if emotion == 'happy' %}bg-success
-                                                    {% elif emotion == 'sad' %}bg-info
-                                                    {% elif emotion == 'angry' %}bg-danger
-                                                    {% elif emotion == 'fearful' %}bg-warning
-                                                    {% elif emotion == 'surprised' %}bg-primary
-                                                    {% elif emotion == 'disgusted' %}bg-secondary
-                                                    {% elif emotion == 'neutral' %}bg-light text-dark
-                                                    {% elif emotion == 'calm' %}bg-info
-                                                    {% elif emotion == 'excited' %}bg-warning
-                                                    {% else %}bg-secondary{% endif %}" 
-                                                    role="progressbar" 
-                                                    style="width: {{ (score * 100)|int }}%" 
-                                                    aria-valuenow="{{ (score * 100)|int }}" 
-                                                    aria-valuemin="0" 
-                                                    aria-valuemax="100">
-                                                    {{ (score * 100)|int }}%
-                                                    </div>
-                                                </div>
+                                            {% elif emotion == 'disgusted' %}bg-purple
+                                            {% elif emotion == 'calm' %}bg-teal
+                                            {% elif emotion == 'excited' %}bg-orange
+                                            {% endif %}" 
+                                            role="progressbar" 
+                                            style="width: {{ (score * 100)|int }}%" 
+                                            aria-valuenow="{{ (score * 100)|int }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
                                             </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-chart-pie me-2"></i>Emotion Distribution</h6>
-                            <canvas id="emotionChart" width="400" height="400"></canvas>
-                            <div class="alert alert-dark mt-3" style="font-size: 0.9rem;">
-                                <i class="fas fa-info-circle me-2"></i>Our ML model was trained on acoustic patterns associated with different emotional states. The visualization shows the probability distribution across all emotions based on your audio's characteristics.
-                            </div>
+                                        </div>
+                                        <span class="ms-2 text-muted">{{ (score * 100)|round(1) }}%</span>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
                         </div>
                     </div>
-                </div>
-                
-                <div class="text-center mt-4">
-                    <a href="{{ url_for('index') }}" class="btn btn-primary">
-                        <i class="fas fa-home me-2"></i>Back to Home
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card bg-dark border-secondary mt-4">
-            <div class="card-header">
-                <h4><i class="fas fa-info-circle me-2"></i>About Voice Analysis</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5 class="mt-3">Voice Characteristics</h5>
-                        <ul>
-                            <li><strong>Pitch:</strong> The fundamental frequency of the voice (in Hz). Male voices typically range from 85-180Hz, female voices from 165-255Hz.</li>
-                            <li><strong>Speech Rate:</strong> Estimated syllables per second. Average conversational speech is around 4-6 syllables per second.</li>
-                            <li><strong>Energy:</strong> Overall loudness and intensity of the voice. Higher values indicate a more powerful voice.</li>
-                            <li><strong>Clarity:</strong> Voice clarity based on noise/harmonic ratio. Higher values indicate clearer articulation.</li>
-                            <li><strong>Tone Variation:</strong> Measures how much the voice pitch varies. Higher values suggest more expressive speech.</li>
-                            <li><strong>Harmonic Ratio:</strong> The balance between harmonic (tonal) and percussive (noisy) components. Higher values indicate a more musical, pure tone.
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h5 class="mt-3">Emotion Analysis</h5>
-                        <ul>
-                            <li><strong>Happy:</strong> Positive emotional tone, often with higher pitch, energy, and speech rate.</li>
-                            <li><strong>Sad:</strong> Lower energy, sometimes with slower speech rate, lower pitch, and reduced tone variation.</li>
-                            <li><strong>Angry:</strong> Higher energy and intensity, often with increased speech rate and more sharp tonal attacks.</li>
-                            <li><strong>Neutral:</strong> Balanced emotional tone with moderate values across most metrics.</li>
-                            <li><strong>Fearful:</strong> Often characterized by trembling voice, irregular rhythm, and distinctive tonal patterns.</li>
-                            <li><strong>Surprised:</strong> Typically features sudden changes in pitch, wide bandwidth, and abrupt tonal shifts.</li>
-                            <li><strong>Disgusted:</strong> Often expressed with particular vocal patterns, including higher noise component and distinctive MFCC patterns.</li>
-                            <li><strong>Calm:</strong> Characterized by lower energy, slower speech, more harmonic tone, and narrower bandwidth.</li>
-                            <li><strong>Excited:</strong> Features fast speech, high energy, bright sound, and faster rhythm than neutral speech.</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <h5 class="mt-3">Visualizations Explained</h5>
-                <ul>
-                    <li><strong>Waveform:</strong> The amplitude (volume) of sound over time. Shows how loud or quiet the audio is at each moment.</li>
-                    <li><strong>Spectrogram:</strong> Shows frequency content of audio over time. Brighter colors represent stronger energy at that frequency.</li>
-                    <li><strong>MFCC:</strong> Mel-Frequency Cepstral Coefficients represent vocal characteristics in a way similar to how humans perceive sound. These are powerful features for speech analysis.</li>
-                </ul>
-                
-                <div class="alert alert-info mt-3">
-                    <i class="fas fa-lightbulb me-2"></i> <strong>Note:</strong> This analysis provides a simplified approximation of voice characteristics and emotions. In production environments, sophisticated machine learning models would be employed for more accurate results.
-                </div>
-            </div>
-        </div>
                 </div>
                 
                 <!-- Activity Recommendations Section -->
@@ -414,6 +345,18 @@
                     </div>
                     {% endif %}
                 </div>
+                
+                <!-- Disclaimer -->
+                <div class="disclaimer text-center mt-4">
+                    <div class="alert alert-dark" role="alert">
+                        <i class="fas fa-lightbulb me-2"></i> <strong>Note:</strong> This analysis provides a simplified approximation of voice characteristics and emotions. In production environments, sophisticated machine learning models would be employed for more accurate results.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 {% block scripts %}
 <script>

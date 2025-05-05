@@ -93,7 +93,7 @@ def upload_file():
                 'filename': filename,
                 'emotions': emotions,
                 'age_estimate': age_estimate,
-                'age_confidence': round(float(recommendations[0]), 2) if isinstance(recommendations[0], float) else 0.9,
+                'age_confidence': 0.85,  # Fixed confidence level for age estimation
                 'voice_features': voice_features,
                 'plots_urls': plots_urls,
                 'recommendations': recommendations,
@@ -226,6 +226,7 @@ def record_audio():
             'filename': filename,
             'emotions': emotions,
             'age_estimate': age_estimate,
+            'age_confidence': 0.85,  # Fixed confidence level for age estimation
             'recommendations': recommendations,
             'voice_features': voice_features,
             'plots_urls': plots_urls,
