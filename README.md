@@ -7,22 +7,23 @@ This Flask web application allows users to upload audio files and perform sophis
 ## Features
 
 - Upload audio files (MP3, WAV, MP4) via an intuitive web interface
+- Record audio directly in the browser for instant analysis
 - Advanced ML-based emotion detection for 9 distinct emotions
   - Happy, sad, angry, neutral, fearful, surprised, disgusted, calm, excited
   - RandomForest classifier with confidence scores
-- Sophisticated gender detection using multiple voice characteristics
-  - Considers pitch, formants, spectral properties, and acoustic features
-  - Handles ambiguous pitch ranges (170-210 Hz) with specialized algorithms
-  - 7-feature RandomForest classifier with 600+ synthetic training samples
-  - Provides confidence scores and enhanced accuracy
+- Age estimation based on voice characteristics
+  - Identifies age range (child, teenager, young adult, etc.)
+  - Provides confidence scores for the estimation
 - Comprehensive voice characteristic analysis
   - Pitch, speech rate, energy, clarity, tone variation, harmonic ratio
   - Formant structure and spectral analysis
 - Beautiful audio visualizations (waveform, spectrogram, MFCC)
 - Voice profile interpretation based on detected characteristics
-- Interactive visualization of emotion distribution with charts
+- Interactive visualization of emotion distribution with both pie and radar charts
+- Personalized activity recommendations based on detected emotions
 - History tracking of previous analyses
 - Mobile-responsive design with Bootstrap
+- Modern colorful UI with gradient effects and visually appealing transitions
 
 ## Project Structure
 
@@ -80,11 +81,28 @@ This Flask web application allows users to upload audio files and perform sophis
 
 ## Usage
 
-1. On the home page, click the "Choose File" button and select an audio file (MP3, WAV, or MP4)
-2. Click the "Upload" button to process the file
-3. View the emotion analysis results and gender detection on the results page
-4. The pie chart shows the distribution of detected emotions
-5. Click "Back to Home" to analyze another file
+### Uploading Audio
+1. On the home page, click the "Choose File" button or simply drag and drop an audio file (MP3, WAV, or MP4)
+2. Click the "Upload and Analyze" button to process the file
+3. Wait for the analysis to complete - this may take a few seconds depending on the file size
+
+### Recording Audio
+1. Switch to the "Record Voice" tab on the home page
+2. Allow microphone access when prompted by your browser
+3. Click the "Start Recording" button and speak into your microphone
+4. Click "Stop Recording" when finished
+5. Click "Analyze Recording" to process your recording
+
+### Viewing Results
+1. The results page shows multiple visualizations of your audio analysis:
+   - Top emotion badges with confidence scores
+   - Interactive pie and radar charts showing emotion distribution
+   - Age estimation with confidence level
+   - Detailed voice characteristics (pitch, speech rate, etc.)
+   - Audio waveform, spectrogram and MFCC visualizations
+   - Personalized activity recommendations based on mood
+2. Use the tabs to switch between different visualization types
+3. Click "Back to Home" to analyze another file
 
 ## Future Enhancements
 
@@ -100,11 +118,11 @@ This Flask web application allows users to upload audio files and perform sophis
 ## Technical Notes
 
 ### Machine Learning Implementation
-- Gender detection uses a RandomForest classifier with 200 trees and optimized hyperparameters
-- The gender model is trained on 600+ synthetic samples covering the full vocal range
-- Special handling is implemented for the ambiguous pitch range (170-210 Hz) where male/female voices overlap
-- 7 voice characteristics are used for gender classification: pitch, formant1, formant2, pitch_variation, spectral_centroid, formant_ratio, and clarity
-- Emotion detection uses a separate RandomForest classifier trained on acoustic patterns associated with different emotional states
+- Emotion detection uses a RandomForest classifier trained on acoustic patterns associated with different emotional states
+- Age estimation utilizes voice characteristics like pitch, speech rate, and formants
+- Both models are powered by scikit-learn's RandomForest implementation with optimized hyperparameters
+- The models are trained on synthetic data with variations to improve generalization
+- Feature importance analysis is used to determine the most relevant voice characteristics
 
 ### Audio Processing
 - The application extracts features using librosa's audio processing capabilities
@@ -118,3 +136,12 @@ This Flask web application allows users to upload audio files and perform sophis
 - Post-processing rules improve accuracy in ambiguous cases
 - Detailed logging helps with debugging and performance analysis
 - Session-based storage allows for history tracking without database integration
+
+### UI Design
+- Modern, colorful interface with gradient backgrounds and card effects
+- Responsive design using Bootstrap 5 framework
+- Interactive visualizations with Chart.js for both pie and radar charts
+- Custom CSS animations for a more engaging user experience
+- Semantic use of colors to indicate emotions and confidence levels
+- Touch-friendly interface elements for mobile users
+- Real-time audio recording and visualization

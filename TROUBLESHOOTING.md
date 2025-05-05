@@ -115,6 +115,22 @@ This document provides solutions to common issues you might encounter when runni
 1. Try a different browser (Chrome, Firefox, Edge)
 2. Clear browser cache and reload
 3. Check for JavaScript errors in the browser console
+4. Make sure your browser supports CSS gradients and transitions
+
+**Issue**: Gradient effects not showing or displaying incorrectly
+
+**Solution**:
+1. Update your browser to the latest version
+2. If using Internet Explorer, switch to a modern browser like Chrome or Firefox
+3. Some older mobile browsers may not support advanced CSS effects
+
+**Issue**: Charts not displaying properly on the results page
+
+**Solution**:
+1. Make sure JavaScript is enabled in your browser
+2. Check the browser console for any Chart.js related errors
+3. Try reloading the page after all elements have loaded
+4. If specific chart tabs don't work, try clicking other tabs first, then return
 
 ## Getting Additional Help
 
