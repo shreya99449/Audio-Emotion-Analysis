@@ -38,15 +38,16 @@ This Flask web application allows users to upload audio files and perform sophis
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.8 or higher (3.8 - 3.11 recommended)
 - VS Code with Python extension
 - pip package manager
+- FFmpeg for audio processing (optional but recommended)
 
 ### Installation
 
-1. Clone the repository or download the source code
+1. Clone or download the repository from Replit
 2. Open the project folder in VS Code
-3. Create a virtual environment (recommended):
+3. Create a virtual environment (strongly recommended):
    ```bash
    python -m venv venv
    ```
@@ -63,10 +64,21 @@ This Flask web application allows users to upload audio files and perform sophis
    ```
    This script will:
    - Check your Python version
-   - Create all necessary directories
+   - Create all necessary directories (uploads, static/plots, etc.)
    - Set up VS Code configuration files
    - Verify dependencies
    - Create a test environment
+   - Configure debugging settings
+
+### Database Setup
+
+The application uses SQLite by default in VS Code, which doesn't require additional configuration. If you want to use PostgreSQL instead:
+
+1. Install PostgreSQL on your machine
+2. Create a database for the application
+3. Set the `DATABASE_URL` environment variable:
+   - On Windows: `set DATABASE_URL=postgresql://username:password@localhost:5432/dbname`
+   - On macOS/Linux: `export DATABASE_URL=postgresql://username:password@localhost:5432/dbname`
 
 ### Running the Application
 
@@ -145,3 +157,32 @@ This Flask web application allows users to upload audio files and perform sophis
 - Semantic use of colors to indicate emotions and confidence levels
 - Touch-friendly interface elements for mobile users
 - Real-time audio recording and visualization
+
+## Replit vs. VS Code Environment
+
+This application is designed to run smoothly in both Replit and VS Code environments, with some key differences:
+
+### Replit Environment
+- **Workflow Management**: Uses Replit's built-in workflow system to start the server
+- **Database**: Configured to use PostgreSQL database via environment variables
+- **Package Management**: Dependencies are managed through pyproject.toml
+- **Web Access**: Automatically exposed through Replit's domain
+- **Starting the App**: Click the Run button in Replit's interface
+
+### VS Code Environment
+- **Workflow Management**: Uses the included run.py script to start the server
+- **Database**: Defaults to SQLite unless PostgreSQL is configured manually
+- **Package Management**: Dependencies are installed through requirements_for_vscode.txt
+- **Web Access**: Accessible at localhost:5000 by default
+- **Starting the App**: Use `python run.py` command in terminal
+
+### Switching Between Environments
+If you've been developing in Replit and want to switch to VS Code:
+1. Export your project from Replit
+2. Follow the VS Code setup instructions above
+3. Run setup_vscode.py to configure the local environment
+
+If you've been developing in VS Code and want to use Replit:
+1. Import your project to Replit
+2. Make sure the correct packages are listed in pyproject.toml
+3. Use the Replit workflow to start the application
