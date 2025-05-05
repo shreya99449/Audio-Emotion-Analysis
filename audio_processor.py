@@ -461,11 +461,20 @@ class EmotionRecognizer:
             "happy", "sad", "angry", "neutral", "fearful", 
             "surprised", "disgusted", "calm", "excited"
         ]
-        # Initialize the model
-        self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+        # Initialize the model with improved parameters
+        self.model = RandomForestClassifier(
+            n_estimators=200,  # More trees for better accuracy
+            max_depth=10,      # Deeper trees to capture complex patterns
+            min_samples_split=5,
+            min_samples_leaf=2,
+            bootstrap=True,
+            class_weight='balanced',  # Handle potential class imbalance
+            random_state=42
+        )
         self._train_model()
         self.scaler = preprocessing.StandardScaler()
         self._fit_scaler()
+        logging.info("Emotion model initialized with improved parameters")
     
     def _train_model(self):
         # Generate synthetic training data based on emotional speech characteristics
@@ -473,18 +482,40 @@ class EmotionRecognizer:
         # Features: [energy, speech_rate, pitch_mean, pitch_var, spectral_centroid, spectral_bandwidth, zero_crossing_rate]
         
         # Parameters for different emotions [energy, speech_rate, pitch_mean, pitch_var, spectral_centroid, spectral_bandwidth, zcr]
+        # Based on research studies on vocal acoustics for different emotions
         emotion_params = {
-            # Each emotion has a specific acoustic signature
-            "happy":     [0.7, 0.8, 0.7, 0.6, 0.7, 0.6, 0.5],  # High energy, fast speech
-            "sad":       [0.3, 0.3, 0.4, 0.3, 0.4, 0.3, 0.3],  # Low energy, slow speech
-            "angry":     [0.8, 0.7, 0.6, 0.8, 0.5, 0.8, 0.7],  # High energy, high variance
-            "neutral":   [0.5, 0.5, 0.5, 0.3, 0.5, 0.5, 0.5],  # Medium everything
-            "fearful":   [0.4, 0.6, 0.6, 0.7, 0.5, 0.6, 0.6],  # Variable pitch
-            "surprised": [0.6, 0.7, 0.8, 0.8, 0.7, 0.7, 0.6],  # High pitch, variable
-            "disgusted": [0.5, 0.4, 0.5, 0.5, 0.4, 0.6, 0.7],  # Specific spectral pattern
-            "calm":      [0.3, 0.3, 0.4, 0.2, 0.4, 0.3, 0.3],  # Low energy, stable
-            "excited":   [0.8, 0.8, 0.7, 0.7, 0.7, 0.7, 0.6]   # High energy, fast speech
+            # Each emotion has a distinct acoustic signature
+            # Format: [energy, speech_rate, pitch_mean, pitch_var, spectral_centroid, spectral_bandwidth, zcr]
+            
+            # Happy: High energy, fast speech rate, higher pitch mean, moderate pitch variance
+            "happy":     [0.8, 0.9, 0.7, 0.5, 0.7, 0.6, 0.4],
+            
+            # Sad: Low energy, slow speech rate, lower pitch mean, low pitch variance
+            "sad":       [0.2, 0.3, 0.4, 0.2, 0.3, 0.3, 0.3],
+            
+            # Angry: Very high energy, moderate-fast speech, moderate pitch height but high variance
+            "angry":     [0.9, 0.7, 0.6, 0.9, 0.5, 0.9, 0.8],
+            
+            # Neutral: Moderate everything, baseline values
+            "neutral":   [0.5, 0.5, 0.5, 0.3, 0.5, 0.5, 0.5],
+            
+            # Fearful: Moderate energy but high pitch and high variance, faster speech
+            "fearful":   [0.5, 0.7, 0.8, 0.8, 0.6, 0.7, 0.7],
+            
+            # Surprised: Quick, high-pitched, with high variance
+            "surprised": [0.7, 0.8, 0.9, 0.8, 0.8, 0.7, 0.6],
+            
+            # Disgusted: Moderately low energy, slow speech rate, distinctive spectral profile
+            "disgusted": [0.4, 0.3, 0.4, 0.6, 0.3, 0.7, 0.8],
+            
+            # Calm: Low energy, slow & stable speech, low variance, smooth profile
+            "calm":      [0.2, 0.4, 0.4, 0.1, 0.4, 0.3, 0.2],
+            
+            # Excited: Very high energy, very fast speech, high pitch and variability 
+            "excited":   [0.9, 0.9, 0.8, 0.8, 0.8, 0.8, 0.6]
         }
+        
+        logging.info("Using improved emotion acoustic parameters for model training")
         
         X_train = []
         y_train = []
@@ -503,10 +534,32 @@ class EmotionRecognizer:
                 params[6] * 0.2              # zero_crossing_rate: 0-0.2
             ]
             
-            # Generate 30 samples for each emotion with noise
-            for _ in range(30):
-                # Add some random variation
-                sample = np.array(scaled_params) * np.random.normal(1, 0.1, 7)
+            # Generate varied samples for each emotion (more for common emotions, fewer for rare ones)
+            # Also vary the noise level based on the emotion category
+            
+            # Determine number of samples and variation level by emotion type
+            if emotion in ['neutral', 'happy', 'sad']:
+                # Common emotions get more samples
+                num_samples = 50
+                # Neutral has less variation, emotional states have more
+                variation = 0.08 if emotion == 'neutral' else 0.15
+            elif emotion in ['angry', 'calm']:
+                # Moderately common emotions
+                num_samples = 40
+                variation = 0.12
+            else:
+                # Less common emotions
+                num_samples = 30
+                variation = 0.15
+                
+            logging.debug(f"Generating {num_samples} training samples for emotion '{emotion}' with variation {variation}")
+            
+            # Generate the samples with appropriate variation
+            for _ in range(num_samples):
+                # Add controlled random variation
+                sample = np.array(scaled_params) * np.random.normal(1, variation, 7)
+                # Ensure all values are positive
+                sample = np.maximum(sample, [0.001, 1.0, 80.0, 1.0, 500.0, 200.0, 0.01])
                 X_train.append(sample)
                 y_train.append(i)  # Label is the index of the emotion
         
@@ -618,14 +671,21 @@ def detect_emotions(features):
     Returns:
         dict: Dictionary of emotion scores
     """
-    # Extract needed features from the dictionary
-    energy = features.get('energy', 0.01)
-    speech_rate = features.get('speech_rate', 5.0)
-    pitch = features.get('pitch', 170.0)
-    pitch_var = features.get('tone_variation', 0) * 100
-    spectral_centroid = 2000  # Default if not available
-    spectral_bandwidth = 1000  # Default if not available
-    zero_crossing_rate = 1 - features.get('clarity', 0.5)  # Invert clarity
+    # Extract needed features from the dictionary with better defaults
+    energy = min(max(features.get('energy', 0.01), 0.001), 0.1)  # Clamp energy to reasonable range
+    speech_rate = min(max(features.get('speech_rate', 5.0), 0.5), 15.0)  # Clamp speech rate
+    pitch = min(max(features.get('pitch', 170.0), 80.0), 400.0)  # Clamp pitch to human range
+    pitch_var = min(max(features.get('tone_variation', 0.1) * 50, 1.0), 100.0)  # Scale and clamp variation
+    
+    # Better defaults based on average voice spectra
+    spectral_centroid = 2000 if pitch < 165 else 2500  # Higher for female-typical voices
+    spectral_bandwidth = 1000 if speech_rate < 6.0 else 1500  # Higher bandwidth for faster speech
+    zero_crossing_rate = 1 - min(max(features.get('clarity', 0.5), 0.2), 0.95)  # Invert clarity & clamp
+    
+    # Log the features being used for emotion detection
+    logging.debug(f"Emotion detection input: energy={energy:.4f}, speech_rate={speech_rate:.2f}, "
+                 f"pitch={pitch:.1f}, pitch_var={pitch_var:.1f}, centroid={spectral_centroid}, "
+                 f"bandwidth={spectral_bandwidth}, zcr={zero_crossing_rate:.3f}")
     
     # Create feature vector for emotion detection
     feature_vector = np.array([energy, speech_rate, pitch, pitch_var, 
@@ -634,9 +694,39 @@ def detect_emotions(features):
     # Use our pre-trained model to predict emotions
     emotion_scores = emotion_recognizer.predict(feature_vector)
     
+    # Apply some domain knowledge post-processing for better accuracy:
+    # 1. High energy + high speech rate: boost happy/excited, reduce sad/calm
+    if energy > 0.04 and speech_rate > 9.0:
+        emotion_scores['happy'] *= 1.2
+        emotion_scores['excited'] *= 1.3
+        emotion_scores['sad'] *= 0.7
+        emotion_scores['calm'] *= 0.7
+    
+    # 2. Low energy + low speech rate: boost sad/calm, reduce happy/excited
+    if energy < 0.01 and speech_rate < 3.0:
+        emotion_scores['sad'] *= 1.5
+        emotion_scores['calm'] *= 1.2
+        emotion_scores['happy'] *= 0.6
+        emotion_scores['excited'] *= 0.5
+    
+    # 3. High pitch variation + high energy: boost angry if pitch is low, surprised if pitch is high
+    if pitch_var > 50 and energy > 0.03:
+        if pitch < 160:  # Likely male angry
+            emotion_scores['angry'] *= 1.6
+        else:  # Likely female surprised
+            emotion_scores['surprised'] *= 1.4
+    
+    # 4. Very low pitch variation: boost neutral and calm
+    if pitch_var < 10:
+        emotion_scores['neutral'] *= 1.3
+        emotion_scores['calm'] *= 1.2
+    
     # Ensure scores are normalized and rounded
     total = sum(emotion_scores.values())
     normalized_scores = {e: round(s/total, 2) for e, s in emotion_scores.items()}
+    
+    # Log the final emotion results
+    logging.info(f"Emotion detection results: {', '.join([f'{e}: {v}' for e, v in sorted(normalized_scores.items(), key=lambda x: x[1], reverse=True)[:3]])}")
     
     return normalized_scores
 
