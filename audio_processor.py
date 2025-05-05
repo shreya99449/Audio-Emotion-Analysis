@@ -57,8 +57,20 @@ def process_audio_file(file_path):
     
     try:
         # Load the audio file using librosa for analysis
-        y, sr = librosa.load(file_path, sr=None)
+        logging.debug(f"Loading audio file: {file_path}")
+        y, sr = librosa.load(file_path, sr=None, mono=True)
+        logging.debug(f"Loaded audio: sample rate={sr}Hz, length={len(y)} samples")
+        
+        if len(y) == 0:
+            raise ValueError("Audio file contains no data")
+            
         duration = librosa.get_duration(y=y, sr=sr)
+        logging.debug(f"Audio duration: {duration:.2f} seconds")
+        
+        # Basic audio validation
+        if np.isnan(y).any() or np.isinf(y).any():
+            logging.warning("Audio contains NaN or Inf values. Fixing...")
+            y = np.nan_to_num(y)  # Replace NaNs and Infs with finite numbers
         
         # Extract advanced audio features
         # 1. Time domain features
@@ -80,9 +92,15 @@ def process_audio_file(file_path):
         audio_kurtosis = kurtosis(y)
         
         # 5. MFCC features - powerful for speech analysis
+        logging.debug("Extracting MFCC features")
         mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+        if np.isnan(mfccs).any() or np.isinf(mfccs).any():
+            logging.warning("MFCCs contain NaN or Inf values. Fixing...")
+            mfccs = np.nan_to_num(mfccs)  # Replace NaNs and Infs
+        
         mfcc_means = np.mean(mfccs, axis=1)
         mfcc_vars = np.var(mfccs, axis=1)
+        logging.debug(f"MFCC features: shape={mfccs.shape}, mean range: {np.min(mfcc_means):.4f} to {np.max(mfcc_means):.4f}")
         
         # 6. Chroma features - useful for tonal content
         chroma = librosa.feature.chroma_stft(y=y, sr=sr)
