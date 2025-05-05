@@ -125,6 +125,21 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <th scope="row">Harmonic Ratio</th>
+                                        <td>
+                                            {{ voice_features.harmonic_ratio }}
+                                            <div class="progress mt-1">
+                                                <div class="progress-bar bg-info" 
+                                                    role="progressbar" 
+                                                    style="width: {{ (voice_features.harmonic_ratio / 3 * 100)|int if voice_features.harmonic_ratio else 0 }}%" 
+                                                    aria-valuenow="{{ voice_features.harmonic_ratio }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="3">
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -154,6 +169,12 @@
                                         <li class="list-group-item bg-dark text-light">Clear, well-articulated speech with good pronunciation</li>
                                     {% else %}
                                         <li class="list-group-item bg-dark text-light">Speech has some roughness or breathiness qualities</li>
+                                    {% endif %}
+                                    
+                                    {% if voice_features.harmonic_ratio > 1.5 %}
+                                        <li class="list-group-item bg-dark text-light">More musical, tonal voice with harmonic qualities</li>
+                                    {% else %}
+                                        <li class="list-group-item bg-dark text-light">More textured voice with noise/percussive components</li>
                                     {% endif %}
                                 </ul>
                             </div>
@@ -272,6 +293,7 @@
                             <li><strong>Energy:</strong> Overall loudness and intensity of the voice. Higher values indicate a more powerful voice.</li>
                             <li><strong>Clarity:</strong> Voice clarity based on noise/harmonic ratio. Higher values indicate clearer articulation.</li>
                             <li><strong>Tone Variation:</strong> Measures how much the voice pitch varies. Higher values suggest more expressive speech.</li>
+                            <li><strong>Harmonic Ratio:</strong> The balance between harmonic (tonal) and percussive (noisy) components. Higher values indicate a more musical, pure tone.
                         </ul>
                     </div>
                     <div class="col-md-6">
@@ -282,6 +304,10 @@
                             <li><strong>Angry:</strong> Higher energy and intensity, often with increased speech rate and more sharp tonal attacks.</li>
                             <li><strong>Neutral:</strong> Balanced emotional tone with moderate values across most metrics.</li>
                             <li><strong>Fearful:</strong> Often characterized by trembling voice, irregular rhythm, and distinctive tonal patterns.</li>
+                            <li><strong>Surprised:</strong> Typically features sudden changes in pitch, wide bandwidth, and abrupt tonal shifts.</li>
+                            <li><strong>Disgusted:</strong> Often expressed with particular vocal patterns, including higher noise component and distinctive MFCC patterns.</li>
+                            <li><strong>Calm:</strong> Characterized by lower energy, slower speech, more harmonic tone, and narrower bandwidth.</li>
+                            <li><strong>Excited:</strong> Features fast speech, high energy, bright sound, and faster rhythm than neutral speech.</li>
                         </ul>
                     </div>
                 </div>
@@ -312,11 +338,15 @@
         
         // Define colors for each emotion
         const backgroundColors = {
-            'Happy': 'rgba(40, 167, 69, 0.7)',  // Green
-            'Sad': 'rgba(23, 162, 184, 0.7)',   // Cyan
-            'Angry': 'rgba(220, 53, 69, 0.7)',  // Red
-            'Neutral': 'rgba(108, 117, 125, 0.7)', // Gray
-            'Fearful': 'rgba(255, 193, 7, 0.7)' // Yellow
+            'Happy': 'rgba(40, 167, 69, 0.7)',       // Green
+            'Sad': 'rgba(23, 162, 184, 0.7)',        // Cyan
+            'Angry': 'rgba(220, 53, 69, 0.7)',       // Red
+            'Neutral': 'rgba(108, 117, 125, 0.7)',   // Gray
+            'Fearful': 'rgba(255, 193, 7, 0.7)',     // Yellow
+            'Surprised': 'rgba(111, 66, 193, 0.7)',  // Purple
+            'Disgusted': 'rgba(102, 16, 242, 0.7)',  // Indigo
+            'Calm': 'rgba(32, 201, 151, 0.7)',       // Teal
+            'Excited': 'rgba(253, 126, 20, 0.7)'     // Orange
         };
         
         // Create the colors array in the same order as labels
