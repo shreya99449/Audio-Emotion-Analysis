@@ -112,17 +112,40 @@ def process_audio_file(file_path):
         percussive_energy = np.sum(y_percussive**2) / len(y_percussive)
         
         # Estimate the fundamental frequency (pitch) for gender detection
+        logging.debug("Estimating pitch")
         pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
+        if np.isnan(pitches).any() or np.isinf(pitches).any():
+            logging.warning("Pitch contains NaN or Inf values. Fixing...")
+            pitches = np.nan_to_num(pitches)  # Replace NaNs and Infs
+            
+        if np.isnan(magnitudes).any() or np.isinf(magnitudes).any():
+            logging.warning("Magnitude contains NaN or Inf values. Fixing...")
+            magnitudes = np.nan_to_num(magnitudes)  # Replace NaNs and Infs
+            
         pitch = get_average_pitch(pitches, magnitudes)
+        if pitch == 0 or np.isnan(pitch) or np.isinf(pitch):
+            # If pitch detection failed, use a heuristic
+            logging.warning(f"Pitch detection failed. Using heuristic.")
+            harmonic_mean = np.mean(y_harmonic)
+            pitch = 150 if harmonic_mean < 0 else 220  # Simple heuristic
+            
+        logging.debug(f"Estimated pitch: {pitch:.2f} Hz")
         
         # Speech rate estimation - count syllables based on energy peaks
+        logging.debug("Estimating speech rate")
         hop_length = 512
         energy_frames = np.array([sum(abs(y[i:i+hop_length]**2)) for i in range(0, len(y), hop_length)])
-        energy_frames_normalized = energy_frames / np.max(energy_frames)
-        threshold = 0.1
-        energy_peaks = np.where(energy_frames_normalized > threshold)[0]
-        syllable_count = len(energy_peaks) / 4  # Rough approximation
-        speech_rate = syllable_count / duration if duration > 0 else 0  # syllables per second
+        if np.max(energy_frames) > 0:  # Ensure non-zero max to avoid division by zero
+            energy_frames_normalized = energy_frames / np.max(energy_frames)
+            threshold = 0.1
+            energy_peaks = np.where(energy_frames_normalized > threshold)[0]
+            syllable_count = max(len(energy_peaks) / 4, 1)  # At least 1 syllable
+            speech_rate = syllable_count / duration if duration > 0 else 1  # syllables per second
+        else:
+            logging.warning("No significant audio energy detected for speech rate estimation")
+            speech_rate = 1  # Default value for speech rate
+            
+        logging.debug(f"Speech rate: {speech_rate:.2f} syllables/sec")
         
         # Calculate pitch variation
         pitch_var = np.std(pitches[pitches > 0]) / 100 if np.any(pitches > 0) else 0
@@ -149,7 +172,10 @@ def process_audio_file(file_path):
         logging.info(f"ML model results: pitch={pitch:.2f}Hz, gender={gender} (conf={gender_confidence:.2f}), speech_rate={speech_rate:.2f}syl/s")
         
     except Exception as e:
-        logging.warning(f"Error in audio processing: {str(e)}. Falling back to basic method.")
+        import traceback
+        logging.warning(f"Error in audio processing: {str(e)}")
+        logging.debug(f"Exception traceback:\n{traceback.format_exc()}")
+        logging.warning("Falling back to basic method.")
         # Fallback to basic method if librosa processing fails
         np.random.seed(int(file_hash, 16) % 2**32)
         
