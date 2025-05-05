@@ -223,13 +223,19 @@ class GenderDetector:
         
         # Features: [pitch, formant1, formant2, pitch_variation, spectral_centroid]
         X_train = np.array([
-            # Male examples (80-120 samples)
-            *np.random.normal(loc=[120, 500, 1500, 10, 1500], scale=[20, 50, 100, 2, 200], size=(100, 5)),
-            # Female examples (80-120 samples)
-            *np.random.normal(loc=[220, 550, 1800, 15, 1800], scale=[25, 50, 150, 3, 200], size=(100, 5))
+            # Male examples - typical range with good variance
+            *np.random.normal(loc=[120, 500, 1500, 10, 1500], scale=[20, 50, 100, 2, 200], size=(60, 5)),  # Low pitch males
+            *np.random.normal(loc=[170, 520, 1600, 12, 1600], scale=[15, 40, 90, 3, 180], size=(30, 5)),   # Higher pitch males
+            *np.random.normal(loc=[210, 530, 1650, 14, 1650], scale=[20, 30, 80, 3, 160], size=(10, 5)),   # Very high pitch males
+            
+            # Female examples - typical range with good variance
+            *np.random.normal(loc=[180, 550, 1800, 15, 1800], scale=[15, 40, 120, 3, 180], size=(20, 5)),   # Low pitch females
+            *np.random.normal(loc=[220, 580, 1900, 18, 1850], scale=[20, 45, 140, 4, 190], size=(60, 5)),   # Mid pitch females
+            *np.random.normal(loc=[250, 600, 2000, 20, 1900], scale=[25, 50, 150, 5, 200], size=(20, 5))    # High pitch females
         ])
         
         # Labels: 0 for male, 1 for female
+        # Male samples: 60 + 30 + 10 = 100, Female samples: 20 + 60 + 20 = 100
         y_train = np.array([0] * 100 + [1] * 100)
         
         # Train the model
