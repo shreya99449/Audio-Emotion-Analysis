@@ -1,0 +1,76 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment directories
+.env
+.venv
+env/
+venv/
+ENV/
+
+# VS Code files
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+
+# Project specific
+uploads/*
+!uploads/.gitkeep
+static/plots/*
+!static/plots/.gitkeep
+instance/
+app.log
+
+# Plot images
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.svg
+
+# Mac/OSX
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+dist/
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Distribution / packaging
+.Python
+build/
+releases/

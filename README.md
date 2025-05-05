@@ -1,5 +1,7 @@
 # Advanced Voice Analysis Application with Machine Learning
 
+**UPDATE**: This application is now fully compatible with VS Code! Use the included setup tools and instructions to run it outside of Replit.
+
 This Flask web application allows users to upload audio files and perform sophisticated voice analysis using machine learning models. The application detects emotional content, speaker gender, and detailed voice characteristics with high accuracy. It stores the uploaded files in a local 'uploads' directory and uses advanced audio processing techniques to extract a wide range of vocal features.
 
 ## Features
