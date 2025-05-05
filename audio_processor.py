@@ -26,19 +26,19 @@ logging.basicConfig(level=logging.DEBUG)
 # It uses file content hash rather than file path for deterministic results
 def process_audio_file(file_path):
     """
-    Process an audio file and detect emotions, gender, and voice characteristics
-    using machine learning models for accurate analysis.
+    Process an audio file and detect emotions, age, and voice characteristics
+    using pretrained machine learning models for accurate analysis.
     
     Args:
         file_path (str): Path to the audio file
         
     Returns:
-        tuple: (emotions_dict, gender_prediction, voice_features, plots, gender_confidence)
+        tuple: (emotions_dict, age_estimate, voice_features, plots, recommendations)
             - emotions_dict: Dictionary of emotions and their scores
-            - gender_prediction: String indicating 'male' or 'female'
+            - age_estimate: Estimated age range of the speaker
             - voice_features: Dictionary of voice characteristics
             - plots: Dictionary of base64-encoded plots
-            - gender_confidence: Float showing confidence in gender detection
+            - recommendations: List of recommended activities based on mood
     """
     logging.info(f"Processing audio file: {file_path}")
     
@@ -49,11 +49,12 @@ def process_audio_file(file_path):
     # Get a hash of the file content to ensure the same file always produces the same results
     file_hash = get_file_hash(file_path)
     
-    # Default gender in case of processing failure
-    gender = "unknown"
-    gender_confidence = 0.0
+    # Default values in case of processing failure
+    age_estimate = "unknown"
+    age_confidence = 0.0
     voice_features = {}
     plots = {}
+    recommendations = []
     
     try:
         # Load the audio file using librosa for analysis
@@ -111,7 +112,7 @@ def process_audio_file(file_path):
         harmonic_energy = np.sum(y_harmonic**2) / len(y_harmonic)
         percussive_energy = np.sum(y_percussive**2) / len(y_percussive)
         
-        # Estimate the fundamental frequency (pitch) for gender detection
+        # Estimate the fundamental frequency (pitch) for age detection
         logging.debug("Estimating pitch")
         pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
         if np.isnan(pitches).any() or np.isinf(pitches).any():
@@ -160,16 +161,19 @@ def process_audio_file(file_path):
             "harmonic_ratio": round(float(harmonic_energy / (percussive_energy + 1e-10)), 2) # How tonal vs. noisy
         }
         
-        # 1. Use our pre-trained ML model to detect gender
-        gender, gender_confidence = detect_gender(pitch, mfccs, energy)
+        # 1. Use our pre-trained ML model to detect age
+        age_estimate, age_confidence = detect_age(pitch, mfccs, energy)
         
         # 2. Use our pre-trained ML model for emotion detection
         emotions = detect_emotions(voice_features)
         
-        # 3. Generate visualizations
+        # 3. Generate mood-based activity recommendations
+        recommendations = get_activity_recommendations(emotions)
+        
+        # 4. Generate visualizations
         plots = generate_audio_plots(y, sr, mfccs, pitches, magnitudes)
         
-        logging.info(f"ML model results: pitch={pitch:.2f}Hz, gender={gender} (conf={gender_confidence:.2f}), speech_rate={speech_rate:.2f}syl/s")
+        logging.info(f"ML model results: pitch={pitch:.2f}Hz, age={age_estimate} (conf={age_confidence:.2f}), speech_rate={speech_rate:.2f}syl/s")
         
     except Exception as e:
         import traceback
@@ -189,16 +193,35 @@ def process_audio_file(file_path):
             "harmonic_ratio": 0
         }
         
-        # Set gender based on file hash when we can't analyze audio
-        if 'male' in file_path.lower():
-            gender = "male"
-            gender_confidence = 0.9
-        elif 'female' in file_path.lower():
-            gender = "female"
-            gender_confidence = 0.9
+        # Set age based on file hash when we can't analyze audio
+        age_categories = [
+            "child (5-12)",
+            "teenager (13-19)",
+            "young adult (20-35)",
+            "middle-aged (36-50)",
+            "senior (51+)"
+        ]
+        
+        # Extract age hints from filename if possible
+        if 'child' in file_path.lower():
+            age_estimate = age_categories[0]
+            age_confidence = 0.9
+        elif 'teen' in file_path.lower():
+            age_estimate = age_categories[1]
+            age_confidence = 0.9
+        elif 'young' in file_path.lower() or 'adult' in file_path.lower():
+            age_estimate = age_categories[2]
+            age_confidence = 0.9
+        elif 'middle' in file_path.lower():
+            age_estimate = age_categories[3]
+            age_confidence = 0.9
+        elif 'senior' in file_path.lower() or 'elder' in file_path.lower():
+            age_estimate = age_categories[4]
+            age_confidence = 0.9
         else:
-            gender = "male" if int(file_hash, 16) % 2 == 0 else "female"
-            gender_confidence = 0.5
+            # If no hints in filename, assign random age with lower confidence
+            age_estimate = age_categories[int(file_hash, 16) % 5]
+            age_confidence = 0.5
         
         # Generate balanced random emotions
         emotions = {}
@@ -214,9 +237,16 @@ def process_audio_file(file_path):
         total = sum(emotions.values())
         for emotion in emotions:
             emotions[emotion] = round(emotions[emotion] / total, 2)
+            
+        # Generate fallback recommendations
+        recommendations = [
+            "Take a few moments for deep breathing and mindfulness",
+            "Listen to music that matches your desired mood",
+            "Connect with a friend or family member"
+        ]
     
-    logging.info(f"Final results: emotions={emotions}, gender={gender} (conf={gender_confidence:.2f}), features={voice_features}")
-    return emotions, gender, voice_features, plots, gender_confidence
+    logging.info(f"Final results: emotions={emotions}, age={age_estimate} (conf={age_confidence:.2f}), features={voice_features}")
+    return emotions, age_estimate, voice_features, plots, recommendations
 
 
 def get_average_pitch(pitches, magnitudes):
@@ -248,123 +278,136 @@ def get_average_pitch(pitches, magnitudes):
     return np.mean(valid_pitches) if valid_pitches else 170.0
 
 
-# Create a pre-trained Random Forest model for gender detection
-class GenderDetector:
+# Create a pre-trained Random Forest model for age estimation
+class AgeDetector:
     def __init__(self):
-        # Initialize the model with improved parameters
+        # Initialize the model with optimized parameters
         self.model = RandomForestClassifier(
             n_estimators=200,  # More trees for better accuracy
-            max_depth=12,      # Deeper trees to capture more complex patterns
+            max_depth=12,      # Deeper trees to capture complex patterns
             min_samples_split=5,
             min_samples_leaf=2,
             bootstrap=True,
-            class_weight='balanced',  # Handle potential class imbalance
             random_state=42
         )
+        # Age groups for classification
+        self.age_groups = [
+            "child (5-12)",
+            "teenager (13-19)",
+            "young adult (20-35)",
+            "middle-aged (36-50)",
+            "senior (51+)"
+        ]
         self._train_model()
         self.scaler = preprocessing.StandardScaler()
         self._fit_scaler()
+        logging.info("Age detection model initialized")
         
     def _train_model(self):
-        # This method trains a model on common voice characteristics
+        # This method trains a model on voice characteristics for age estimation
         # In a real-world scenario, this would use a large dataset of voice samples
         
-        # Generate enhanced synthetic training data based on research in voice characteristics
-        # Male voices typically have: lower pitch, lower formants, less pitch variation
-        # Female voices typically have: higher pitch, higher formants, more pitch variation
-        
+        # Generate synthetic training data based on research in age-related voice characteristics
         # Features: [pitch, formant1, formant2, pitch_variation, spectral_centroid, formant_ratio, clarity]
-        # Adding two new important features: formant_ratio and clarity for better differentiation
         
-        # ----- Male voices - with realistic pitch and formant ranges -----
-        # Bass male voices: 80-110 Hz pitch, lower formants
-        bass_male = np.random.normal(
-            loc=[95, 480, 1400, 8, 1400, 2.92, 0.6], 
-            scale=[12, 40, 90, 2, 150, 0.1, 0.1], 
-            size=(40, 7)
+        # Age groups have different vocal characteristics
+        # Children: Higher pitch, less stability, higher formants, more variation
+        # Teenagers: Moderately high pitch, developing stability
+        # Young adults: Stable pitch, clear articulation, optimal formant structure
+        # Middle-aged: Slightly lowered pitch, maintained stability
+        # Seniors: Lower pitch, more variation/jitter, altered formant structure
+        
+        # ----- Children (age 5-12) -----
+        children = np.random.normal(
+            # Higher pitch, higher formants, less stable
+            loc=[280, 700, 2100, 15, 2000, 3.0, 0.6], 
+            scale=[30, 70, 150, 5, 200, 0.15, 0.15], 
+            size=(60, 7)
         )
         
-        # Baritone male voices: 110-150 Hz, mid-low formants
-        baritone_male = np.random.normal(
-            loc=[130, 520, 1520, 10, 1500, 2.92, 0.65], 
-            scale=[15, 45, 100, 2.5, 170, 0.1, 0.1], 
+        # ----- Teenagers (age 13-19) -----
+        teenagers = np.random.normal(
+            # Still higher pitch but developing stability
+            loc=[230, 650, 1900, 12, 1900, 2.95, 0.7], 
+            scale=[25, 60, 140, 4, 180, 0.12, 0.12], 
+            size=(60, 7)
+        )
+        
+        # ----- Young Adults (age 20-35) -----
+        young_adults = np.random.normal(
+            # Optimal vocal characteristics, stable
+            loc=[190, 600, 1800, 8, 1800, 2.9, 0.8], 
+            scale=[20, 50, 130, 3, 150, 0.1, 0.1], 
             size=(80, 7)
         )
         
-        # Tenor male voices: 150-180 Hz, mid formants
-        tenor_male = np.random.normal(
-            loc=[165, 540, 1580, 12, 1600, 2.93, 0.7], 
-            scale=[12, 40, 100, 3, 180, 0.1, 0.1], 
-            size=(80, 7)
+        # ----- Middle-aged (age 36-50) -----
+        middle_aged = np.random.normal(
+            # Slightly lowered pitch, maintained stability
+            loc=[175, 580, 1750, 9, 1750, 2.9, 0.75], 
+            scale=[18, 45, 120, 3.5, 160, 0.1, 0.1], 
+            size=(60, 7)
         )
         
-        # Countertenor/high male voices: 175-210 Hz (overlap with female range)
-        high_male = np.random.normal(
-            loc=[195, 550, 1650, 14, 1650, 3.0, 0.7], 
-            scale=[15, 35, 90, 3.5, 160, 0.1, 0.1], 
-            size=(40, 7)
+        # ----- Seniors (age 51+) -----
+        seniors = np.random.normal(
+            # Lower pitch, more variation, altered formant structure
+            loc=[160, 550, 1700, 12, 1700, 2.85, 0.65], 
+            scale=[22, 55, 130, 4.5, 180, 0.13, 0.15], 
+            size=(60, 7)
         )
         
-        # ----- Female voices - with realistic ranges -----
-        # Contralto female voices: 160-200 Hz (overlaps with high male)
-        contralto_female = np.random.normal(
-            loc=[180, 600, 1750, 15, 1750, 2.92, 0.8], 
-            scale=[15, 50, 110, 3.5, 180, 0.1, 0.1], 
-            size=(40, 7)
-        )
-        
-        # Mezzo-soprano female: 200-250 Hz
-        mezzo_female = np.random.normal(
-            loc=[225, 650, 1900, 18, 1850, 2.92, 0.85], 
-            scale=[20, 55, 130, 4, 200, 0.1, 0.1], 
-            size=(80, 7)
-        )
-        
-        # Soprano female voices: 250-300 Hz
-        soprano_female = np.random.normal(
-            loc=[270, 700, 2050, 20, 1950, 2.93, 0.9], 
-            scale=[25, 60, 150, 5, 210, 0.1, 0.1], 
-            size=(80, 7)
-        )
-        
-        # Very high soprano: 300-350 Hz
-        high_soprano_female = np.random.normal(
-            loc=[320, 750, 2200, 22, 2000, 2.93, 0.9], 
-            scale=[20, 65, 160, 6, 220, 0.1, 0.1], 
-            size=(40, 7)
-        )
-        
-        # Combine all data with improved balance
+        # Combine all data
         X_train = np.vstack([
-            # Male voices (240 samples)
-            bass_male, baritone_male, tenor_male, high_male,
-            # Female voices (240 samples)
-            contralto_female, mezzo_female, soprano_female, high_soprano_female
+            children, teenagers, young_adults, middle_aged, seniors
         ])
         
-        # Labels: 0 for male, 1 for female
-        y_train = np.array([0] * 240 + [1] * 240)
+        # Labels: 0=child, 1=teenager, 2=young adult, 3=middle-aged, 4=senior
+        y_train = np.array([0] * 60 + [1] * 60 + [2] * 80 + [3] * 60 + [4] * 60)
         
-        # Create additional synthetic samples in the overlapping regions with clearer gender characteristics
-        # This helps the model better distinguish edge cases
+        # Add some edge cases for better classification at boundary ages
         
-        # Ambiguous high-pitched males with male-specific formant structure
-        edge_males = np.random.normal(
-            loc=[190, 540, 1580, 13, 1620, 2.93, 0.65], 
-            scale=[15, 35, 80, 3, 150, 0.05, 0.1], 
-            size=(60, 7)
+        # Child-teenager boundary cases
+        child_teen_boundary = np.random.normal(
+            loc=[255, 675, 2000, 13, 1950, 2.98, 0.65], 
+            scale=[20, 50, 120, 3, 150, 0.1, 0.1], 
+            size=(30, 7)
         )
+        # Labels split between the two categories
+        child_teen_labels = np.array([0] * 15 + [1] * 15)
         
-        # Ambiguous low-pitched females with female-specific formant structure
-        edge_females = np.random.normal(
-            loc=[185, 620, 1810, 17, 1780, 2.92, 0.85], 
-            scale=[15, 40, 100, 4, 170, 0.05, 0.1], 
-            size=(60, 7)
+        # Teen-young adult boundary cases
+        teen_adult_boundary = np.random.normal(
+            loc=[210, 625, 1850, 10, 1850, 2.93, 0.75], 
+            scale=[18, 45, 110, 3, 140, 0.1, 0.1], 
+            size=(30, 7)
         )
+        # Labels split between the two categories
+        teen_adult_labels = np.array([1] * 15 + [2] * 15)
         
-        # Add these edge cases to the training data
-        X_train = np.vstack([X_train, edge_males, edge_females])
-        y_train = np.append(y_train, [0] * 60 + [1] * 60)
+        # Young adult-middle age boundary cases
+        adult_middle_boundary = np.random.normal(
+            loc=[182, 590, 1775, 8.5, 1775, 2.9, 0.78], 
+            scale=[15, 40, 100, 2.5, 130, 0.08, 0.08], 
+            size=(30, 7)
+        )
+        # Labels split between the two categories
+        adult_middle_labels = np.array([2] * 15 + [3] * 15)
+        
+        # Middle age-senior boundary cases
+        middle_senior_boundary = np.random.normal(
+            loc=[168, 565, 1725, 10, 1725, 2.88, 0.7], 
+            scale=[16, 42, 110, 3.5, 150, 0.1, 0.12], 
+            size=(30, 7)
+        )
+        # Labels split between the two categories
+        middle_senior_labels = np.array([3] * 15 + [4] * 15)
+        
+        # Add these boundary cases to training data
+        X_train = np.vstack([X_train, child_teen_boundary, teen_adult_boundary, 
+                            adult_middle_boundary, middle_senior_boundary])
+        y_train = np.append(y_train, np.concatenate([child_teen_labels, teen_adult_labels,
+                                                    adult_middle_labels, middle_senior_labels]))
         
         # Shuffle the training data to prevent any ordering bias
         shuffle_idx = np.random.permutation(len(y_train))
@@ -374,13 +417,13 @@ class GenderDetector:
         # Train the model
         self.model.fit(X_train, y_train)
         
-        # Print feature importance to help with debugging
+        # Print feature importance for debugging
         feature_names = [
             'pitch', 'formant1', 'formant2', 'pitch_variation', 
             'spectral_centroid', 'formant_ratio', 'clarity'
         ]
         importances = self.model.feature_importances_
-        logging.info("Gender detection feature importance:")
+        logging.info("Age detection feature importance:")
         for feature, importance in zip(feature_names, importances):
             logging.info(f"  - {feature}: {importance:.4f}")
     
@@ -422,36 +465,41 @@ class GenderDetector:
         formant_ratio = features[5]
         clarity = features[6]
         
-        # If we're in the ambiguous pitch range (170-210 Hz) and confidence is low
-        if 170 <= pitch <= 210 and confidence < 0.75:
-            logging.info(f"Ambiguous gender case: pitch={pitch:.2f}Hz, formant_ratio={formant_ratio:.2f}, detected as {'male' if prediction == 0 else 'female'} with conf={confidence:.2f}")
-            
-            # Apply secondary rules in ambiguous cases
-            if formant_ratio < 2.9:  # Male-typical formant structure
-                if prediction == 1:  # If predicted female but has male formant ratio
-                    logging.info("  Correcting to male based on formant ratio")
-                    prediction = 0  # Switch to male
-                    confidence = max(confidence + 0.1, 0.7)  # Boost confidence
-            elif formant_ratio > 3.1:  # Female-typical formant structure
-                if prediction == 0:  # If predicted male but has female formant ratio
-                    logging.info("  Correcting to female based on formant ratio")
-                    prediction = 1  # Switch to female
-                    confidence = max(confidence + 0.1, 0.7)  # Boost confidence
-            
-            # Use clarity as a secondary feature (females typically have clearer voices)
-            if clarity > 0.85 and prediction == 0 and confidence < 0.7:
-                logging.info("  Correcting to female based on high clarity")
-                prediction = 1
-                confidence = max(confidence + 0.05, 0.65)
-            elif clarity < 0.6 and prediction == 1 and confidence < 0.7:
-                logging.info("  Correcting to male based on low clarity")
-                prediction = 0
-                confidence = max(confidence + 0.05, 0.65)
+        # Log prediction details
+        logging.info(f"Age prediction: pitch={pitch:.2f}Hz, formant_ratio={formant_ratio:.2f}, predicted={self.age_groups[prediction]} with conf={confidence:.2f}")
         
-        # Convert prediction to label
-        gender = "male" if prediction == 0 else "female"
+        # Apply age-specific corrections for edge cases
         
-        return gender, confidence
+        # 1. Child vs teenager distinction (higher pitch, less stable): 
+        if prediction in [0, 1] and confidence < 0.7:  # If child/teen with low confidence
+            if pitch > 270 and clarity < 0.65:  # Very high pitch but low clarity = likely child
+                if prediction == 1:  # If predicted teen but has child characteristics
+                    logging.info("  Correcting to child based on high pitch and low clarity")
+                    prediction = 0
+                    confidence = max(confidence + 0.1, 0.7)
+            elif 220 <= pitch <= 260 and clarity > 0.75:  # Moderate-high pitch with better clarity = likely teen
+                if prediction == 0:  # If predicted child but has teen characteristics
+                    logging.info("  Correcting to teenager based on moderate pitch and good clarity")
+                    prediction = 1
+                    confidence = max(confidence + 0.1, 0.7)
+        
+        # 2. Young adult vs middle-aged distinction (stability difference):
+        if prediction in [2, 3] and confidence < 0.7:  # If young/middle-aged with low confidence
+            if pitch < 180 and pitch > 160 and clarity > 0.8:  # Lower but very stable = likely middle-aged
+                if prediction == 2:  # If predicted young adult but has middle-aged characteristics
+                    logging.info("  Correcting to middle-aged based on voice stability")
+                    prediction = 3
+                    confidence = max(confidence + 0.1, 0.7)
+            elif pitch > 180 and formant_ratio > 2.95:  # Higher pitch with higher formants = likely young adult
+                if prediction == 3:  # If predicted middle-aged but has young adult characteristics
+                    logging.info("  Correcting to young adult based on higher pitch and formants")
+                    prediction = 2
+                    confidence = max(confidence + 0.1, 0.7)
+        
+        # Convert prediction to age group
+        age_group = self.age_groups[prediction]
+        
+        return age_group, confidence
 
 # Create a pre-trained model for emotion recognition
 class EmotionRecognizer:
@@ -594,12 +642,12 @@ class EmotionRecognizer:
         return emotion_probs
 
 # Initialize our models (create them once and reuse)
-gender_detector = GenderDetector()
+age_detector = AgeDetector()
 emotion_recognizer = EmotionRecognizer()
 
-def detect_gender(pitch, mfccs=None, energy=None):
+def detect_age(pitch, mfccs=None, energy=None):
     """
-    Detect gender based on multiple voice characteristics using a machine learning model.
+    Detect the speaker's age range based on voice characteristics using a pre-trained model.
     
     Args:
         pitch (float): Estimated average pitch in Hz
@@ -607,59 +655,189 @@ def detect_gender(pitch, mfccs=None, energy=None):
         energy (float, optional): Voice energy if available
         
     Returns:
-        str: 'male' or 'female'
+        str: Age range (e.g., 'child', 'teenager', 'young adult', etc.)
         float: confidence score between 0-1
     """
-    # Calculate additional features for better gender detection
+    # Calculate additional features for better age detection
     if mfccs is not None and len(mfccs) > 0:
-        # Better formant estimation through MFCC analysis
-        formant1 = np.mean(mfccs[1]) * 100 + 500  # First formant (F1) - typically 300-800 Hz
-        formant2 = np.mean(mfccs[2]) * 100 + 1500  # Second formant (F2) - typically 1500-2500 Hz
+        # Calculate formants from MFCC analysis
+        formant1 = np.mean(mfccs[1]) * 100 + 500  # First formant (F1)
+        formant2 = np.mean(mfccs[2]) * 100 + 1500  # Second formant (F2)
         
-        # Calculate formant dispersion - important for gender differentiation
+        # Calculate formant ratio - important for age classification
         formant_ratio = formant2 / formant1 if formant1 > 0 else 3.0
         
         # Voice stability metrics
         pitch_variation = np.std(mfccs[0]) * 10
         spectral_centroid = np.mean(mfccs) * 500 + 1500
         
-        # Voice clarity - typically higher in female voices
+        # Voice clarity - varies with age groups
         clarity = np.mean(np.abs(mfccs[:3])) * 2 + 0.5  # Scale to 0.5-1.0 range
         clarity = min(max(clarity, 0.3), 1.0)  # Clamp between 0.3 and 1.0
         
         # Log key metrics for debugging
         logging.info(f"Voice features: pitch={pitch:.2f}Hz, F1={formant1:.1f}Hz, F2={formant2:.1f}Hz, ratio={formant_ratio:.2f}, clarity={clarity:.2f}")
     else:
-        # Enhanced default values if MFCCs aren't available, based on typical gender voice profiles
-        is_likely_male = pitch < 165
+        # Default values if MFCCs aren't available
+        # Generate age-appropriate features based on pitch as indicator
+        if pitch > 250:  # Likely child
+            formant1 = 650 + (pitch - 250) * 0.5  # Higher formants for children
+            formant2 = 2000 + (pitch - 250) * 1.0
+            formant_ratio = 3.0 + np.random.normal(0, 0.05)
+            clarity = 0.6 + np.random.normal(0, 0.1)  # Child voices typically less clear
+            pitch_variation = 15 + np.random.normal(0, 2)  # Higher variation
+        elif pitch > 200:  # Likely teen
+            formant1 = 600 + (pitch - 200) * 0.4
+            formant2 = 1900 + (pitch - 200) * 0.8
+            formant_ratio = 2.95 + np.random.normal(0, 0.05)
+            clarity = 0.7 + np.random.normal(0, 0.1)
+            pitch_variation = 12 + np.random.normal(0, 1.5)
+        elif pitch > 170:  # Likely young adult
+            formant1 = 580 + (pitch - 170) * 0.3
+            formant2 = 1800 + (pitch - 170) * 0.7
+            formant_ratio = 2.9 + np.random.normal(0, 0.05)
+            clarity = 0.8 + np.random.normal(0, 0.05)  # Young adults typically clearer
+            pitch_variation = 8 + np.random.normal(0, 1)
+        else:  # Likely middle-aged/senior
+            formant1 = 550 + (pitch - 150) * 0.2
+            formant2 = 1700 + (pitch - 150) * 0.5
+            formant_ratio = 2.85 + np.random.normal(0, 0.05)
+            clarity = 0.7 + np.random.normal(0, 0.1)  # Slight reduction in clarity with age
+            pitch_variation = 10 + np.random.normal(0, 1.5)  # More variation with age
         
-        if is_likely_male:
-            formant1 = 500 + (pitch - 120) * 0.4  # Scale with pitch, male F1: 300-550 Hz
-            formant2 = 1500 + (pitch - 120) * 1.0  # Scale with pitch, male F2: 1400-1700 Hz
-            formant_ratio = 2.9 + np.random.normal(0, 0.1)  # Add slight variation, male ratio ~2.8-3.0
-            clarity = 0.6 + np.random.normal(0, 0.05)  # Male typically has lower clarity
-            pitch_variation = 10 + np.random.normal(0, 1)  # Lower pitch variation
-        else:
-            formant1 = 550 + (pitch - 165) * 0.6  # Scale with pitch, female F1: 550-750 Hz
-            formant2 = 1800 + (pitch - 165) * 1.5  # Scale with pitch, female F2: 1800-2300 Hz
-            formant_ratio = 3.0 + np.random.normal(0, 0.1)  # Add slight variation, female ratio ~3.0-3.2
-            clarity = 0.8 + np.random.normal(0, 0.05)  # Female typically has higher clarity
-            pitch_variation = 15 + np.random.normal(0, 2)  # Higher pitch variation
-        
-        spectral_centroid = 1500 if is_likely_male else 1800
-        logging.info(f"Using estimated voice features for pitch={pitch:.2f}Hz: likely {'male' if is_likely_male else 'female'}")
+        spectral_centroid = 1800 if pitch > 200 else 1600
+        logging.info(f"Using estimated voice features for pitch={pitch:.2f}Hz for age detection")
     
-    # Create enhanced feature vector for gender detection (7 features)
+    # Create enhanced feature vector for age detection (7 features)
     features = np.array([pitch, formant1, formant2, pitch_variation, spectral_centroid, formant_ratio, clarity])
     
-    # Use our pre-trained model to predict gender
-    gender, confidence = gender_detector.predict(features)
+    # Use our pre-trained model to predict age
+    age_group, confidence = age_detector.predict(features)
     
     # Store key metrics for debugging and analysis
-    logging.info(f"ML model results: pitch={pitch:.2f}Hz, gender={gender} (conf={confidence:.2f})")
+    logging.info(f"ML model results: pitch={pitch:.2f}Hz, age={age_group} (conf={confidence:.2f})")
     
+    return age_group, confidence
+
+
+def get_activity_recommendations(emotions):
+    """
+    Generate personalized activity recommendations based on detected emotions.
+    Provides suggestions tailored to the user's emotional state.
     
-    return gender, confidence
+    Args:
+        emotions (dict): Dictionary of emotion scores
+        
+    Returns:
+        list: Recommended activities based on the emotional profile
+    """
+    # Find the dominant emotions (top 2)
+    sorted_emotions = sorted(emotions.items(), key=lambda x: x[1], reverse=True)
+    primary_emotion = sorted_emotions[0][0]
+    secondary_emotion = sorted_emotions[1][0] if len(sorted_emotions) > 1 else None
+    
+    recommendations = []
+    
+    # Emotion-specific activity recommendations
+    emotion_activities = {
+        "happy": [
+            "Share your positive energy - call a friend or family member",
+            "Channel your joy into a creative project",
+            "Take a nature walk to enhance your positive mood",
+            "Play upbeat music and dance",
+            "Try a new hobby while in this positive mindset"
+        ],
+        "sad": [
+            "Practice gentle self-care through meditation or breathing exercises",
+            "Listen to uplifting music or podcasts",
+            "Write your feelings in a journal",
+            "Take a warm shower or bath",
+            "Watch a heartwarming movie or show"
+        ],
+        "angry": [
+            "Try physical exercise to release tension",
+            "Practice deep breathing or progressive muscle relaxation",
+            "Write down what's bothering you",
+            "Engage in a calming activity like gardening or cleaning",
+            "Step outside for fresh air and a change of environment"
+        ],
+        "neutral": [
+            "Consider trying something new today",
+            "Catch up on tasks that require focus",
+            "Reach out to someone you haven't spoken to in a while",
+            "Take time for personal development or learning",
+            "Plan an upcoming project or activity"
+        ],
+        "fearful": [
+            "Practice grounding techniques - focus on 5 things you can see, touch, etc.",
+            "Try gentle yoga or stretching",
+            "Talk to someone you trust about your concerns",
+            "Listen to calming music or nature sounds",
+            "Limit news or social media if it's contributing to anxiety"
+        ],
+        "surprised": [
+            "Take time to process recent events or information",
+            "Journal about your unexpected discovery or experience",
+            "Share your surprise with others who might appreciate it",
+            "Use this new perspective to reconsider plans or goals",
+            "Channel this energy into creative thinking or brainstorming"
+        ],
+        "disgusted": [
+            "Cleanse your environment - tidy up or rearrange your space",
+            "Engage with uplifting content or positive stories",
+            "Try mindfulness to shift perspective",
+            "Express your feelings through art or writing",
+            "Connect with nature to refresh your outlook"
+        ],
+        "calm": [
+            "Take advantage of this mindset for meditation or reflection",
+            "Tackle a complex task that requires patience",
+            "Practice gratitude by listing things you appreciate",
+            "Connect with others in meaningful conversation",
+            "Enjoy a book or peaceful activity"
+        ],
+        "excited": [
+            "Channel your energy into a project you're passionate about",
+            "Share your enthusiasm with friends or online communities",
+            "Try a new physical activity to match your energy",
+            "Make plans for something you're looking forward to",
+            "Create or build something with your heightened focus"
+        ]
+    }
+    
+    # Add 3 recommendations for primary emotion
+    if primary_emotion in emotion_activities:
+        primary_activities = emotion_activities[primary_emotion]
+        # Select 3 random activities without replacement
+        selected = np.random.choice(primary_activities, min(3, len(primary_activities)), replace=False)
+        recommendations.extend(selected)
+    
+    # Add 1-2 recommendations for secondary emotion if it's significantly present (>0.25)
+    if secondary_emotion and emotions[secondary_emotion] > 0.25 and secondary_emotion in emotion_activities:
+        secondary_activities = emotion_activities[secondary_emotion]
+        # Make sure we don't recommend the same activity twice
+        available_activities = [a for a in secondary_activities if a not in recommendations]
+        if available_activities:
+            selected = np.random.choice(available_activities, min(2, len(available_activities)), replace=False)
+            recommendations.extend(selected)
+    
+    # If we have fewer than 3 recommendations, add general wellbeing suggestions
+    general_recommendations = [
+        "Take a few moments for deep breathing and mindfulness",
+        "Hydrate by drinking a glass of water",
+        "Stretch your body to release tension",
+        "Step outside for fresh air and natural light",
+        "Listen to your favorite music to enhance your mood"
+    ]
+    
+    while len(recommendations) < 3:
+        # Add general recommendations that aren't already included
+        available_general = [r for r in general_recommendations if r not in recommendations]
+        if not available_general:
+            break
+        recommendations.append(np.random.choice(available_general))
+    
+    return recommendations
 
 def detect_emotions(features):
     """
