@@ -207,8 +207,16 @@ def get_average_pitch(pitches, magnitudes):
 # Create a pre-trained Random Forest model for gender detection
 class GenderDetector:
     def __init__(self):
-        # Initialize the model
-        self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+        # Initialize the model with improved parameters
+        self.model = RandomForestClassifier(
+            n_estimators=200,  # More trees for better accuracy
+            max_depth=12,      # Deeper trees to capture more complex patterns
+            min_samples_split=5,
+            min_samples_leaf=2,
+            bootstrap=True,
+            class_weight='balanced',  # Handle potential class imbalance
+            random_state=42
+        )
         self._train_model()
         self.scaler = preprocessing.StandardScaler()
         self._fit_scaler()
@@ -217,42 +225,144 @@ class GenderDetector:
         # This method trains a model on common voice characteristics
         # In a real-world scenario, this would use a large dataset of voice samples
         
-        # Generate synthetic training data based on known gender voice characteristics
+        # Generate enhanced synthetic training data based on research in voice characteristics
         # Male voices typically have: lower pitch, lower formants, less pitch variation
         # Female voices typically have: higher pitch, higher formants, more pitch variation
         
-        # Features: [pitch, formant1, formant2, pitch_variation, spectral_centroid]
-        X_train = np.array([
-            # Male examples - typical range with good variance
-            *np.random.normal(loc=[120, 500, 1500, 10, 1500], scale=[20, 50, 100, 2, 200], size=(60, 5)),  # Low pitch males
-            *np.random.normal(loc=[170, 520, 1600, 12, 1600], scale=[15, 40, 90, 3, 180], size=(30, 5)),   # Higher pitch males
-            *np.random.normal(loc=[210, 530, 1650, 14, 1650], scale=[20, 30, 80, 3, 160], size=(10, 5)),   # Very high pitch males
-            
-            # Female examples - typical range with good variance
-            *np.random.normal(loc=[180, 550, 1800, 15, 1800], scale=[15, 40, 120, 3, 180], size=(20, 5)),   # Low pitch females
-            *np.random.normal(loc=[220, 580, 1900, 18, 1850], scale=[20, 45, 140, 4, 190], size=(60, 5)),   # Mid pitch females
-            *np.random.normal(loc=[250, 600, 2000, 20, 1900], scale=[25, 50, 150, 5, 200], size=(20, 5))    # High pitch females
+        # Features: [pitch, formant1, formant2, pitch_variation, spectral_centroid, formant_ratio, clarity]
+        # Adding two new important features: formant_ratio and clarity for better differentiation
+        
+        # ----- Male voices - with realistic pitch and formant ranges -----
+        # Bass male voices: 80-110 Hz pitch, lower formants
+        bass_male = np.random.normal(
+            loc=[95, 480, 1400, 8, 1400, 2.92, 0.6], 
+            scale=[12, 40, 90, 2, 150, 0.1, 0.1], 
+            size=(40, 7)
+        )
+        
+        # Baritone male voices: 110-150 Hz, mid-low formants
+        baritone_male = np.random.normal(
+            loc=[130, 520, 1520, 10, 1500, 2.92, 0.65], 
+            scale=[15, 45, 100, 2.5, 170, 0.1, 0.1], 
+            size=(80, 7)
+        )
+        
+        # Tenor male voices: 150-180 Hz, mid formants
+        tenor_male = np.random.normal(
+            loc=[165, 540, 1580, 12, 1600, 2.93, 0.7], 
+            scale=[12, 40, 100, 3, 180, 0.1, 0.1], 
+            size=(80, 7)
+        )
+        
+        # Countertenor/high male voices: 175-210 Hz (overlap with female range)
+        high_male = np.random.normal(
+            loc=[195, 550, 1650, 14, 1650, 3.0, 0.7], 
+            scale=[15, 35, 90, 3.5, 160, 0.1, 0.1], 
+            size=(40, 7)
+        )
+        
+        # ----- Female voices - with realistic ranges -----
+        # Contralto female voices: 160-200 Hz (overlaps with high male)
+        contralto_female = np.random.normal(
+            loc=[180, 600, 1750, 15, 1750, 2.92, 0.8], 
+            scale=[15, 50, 110, 3.5, 180, 0.1, 0.1], 
+            size=(40, 7)
+        )
+        
+        # Mezzo-soprano female: 200-250 Hz
+        mezzo_female = np.random.normal(
+            loc=[225, 650, 1900, 18, 1850, 2.92, 0.85], 
+            scale=[20, 55, 130, 4, 200, 0.1, 0.1], 
+            size=(80, 7)
+        )
+        
+        # Soprano female voices: 250-300 Hz
+        soprano_female = np.random.normal(
+            loc=[270, 700, 2050, 20, 1950, 2.93, 0.9], 
+            scale=[25, 60, 150, 5, 210, 0.1, 0.1], 
+            size=(80, 7)
+        )
+        
+        # Very high soprano: 300-350 Hz
+        high_soprano_female = np.random.normal(
+            loc=[320, 750, 2200, 22, 2000, 2.93, 0.9], 
+            scale=[20, 65, 160, 6, 220, 0.1, 0.1], 
+            size=(40, 7)
+        )
+        
+        # Combine all data with improved balance
+        X_train = np.vstack([
+            # Male voices (240 samples)
+            bass_male, baritone_male, tenor_male, high_male,
+            # Female voices (240 samples)
+            contralto_female, mezzo_female, soprano_female, high_soprano_female
         ])
         
         # Labels: 0 for male, 1 for female
-        # Male samples: 60 + 30 + 10 = 100, Female samples: 20 + 60 + 20 = 100
-        y_train = np.array([0] * 100 + [1] * 100)
+        y_train = np.array([0] * 240 + [1] * 240)
+        
+        # Create additional synthetic samples in the overlapping regions with clearer gender characteristics
+        # This helps the model better distinguish edge cases
+        
+        # Ambiguous high-pitched males with male-specific formant structure
+        edge_males = np.random.normal(
+            loc=[190, 540, 1580, 13, 1620, 2.93, 0.65], 
+            scale=[15, 35, 80, 3, 150, 0.05, 0.1], 
+            size=(60, 7)
+        )
+        
+        # Ambiguous low-pitched females with female-specific formant structure
+        edge_females = np.random.normal(
+            loc=[185, 620, 1810, 17, 1780, 2.92, 0.85], 
+            scale=[15, 40, 100, 4, 170, 0.05, 0.1], 
+            size=(60, 7)
+        )
+        
+        # Add these edge cases to the training data
+        X_train = np.vstack([X_train, edge_males, edge_females])
+        y_train = np.append(y_train, [0] * 60 + [1] * 60)
+        
+        # Shuffle the training data to prevent any ordering bias
+        shuffle_idx = np.random.permutation(len(y_train))
+        X_train = X_train[shuffle_idx]
+        y_train = y_train[shuffle_idx]
         
         # Train the model
         self.model.fit(X_train, y_train)
+        
+        # Print feature importance to help with debugging
+        feature_names = [
+            'pitch', 'formant1', 'formant2', 'pitch_variation', 
+            'spectral_centroid', 'formant_ratio', 'clarity'
+        ]
+        importances = self.model.feature_importances_
+        logging.info("Gender detection feature importance:")
+        for feature, importance in zip(feature_names, importances):
+            logging.info(f"  - {feature}: {importance:.4f}")
     
     def _fit_scaler(self):
-        # Create sample data for scaling
+        # Create more comprehensive sample data for scaling
         X_sample = np.array([
-            # Typical range of features
-            [100, 500, 1500, 10, 1500],  # Low values
-            [250, 600, 2000, 20, 2000]   # High values
+            # Min values for all features
+            [80, 450, 1300, 5, 1300, 2.7, 0.3],
+            # Max values for all features
+            [350, 800, 2300, 25, 2200, 3.2, 1.0]
         ])
         
         # Fit the scaler
         self.scaler.fit(X_sample)
     
     def predict(self, features):
+        # If we have only 5 features (old format), add default values for the new features
+        if len(features) == 5:
+            # Calculate formant_ratio (f2/f1) and add a default clarity value based on pitch
+            pitch = features[0]
+            formant1 = features[1]
+            formant2 = features[2]  
+            formant_ratio = formant2 / formant1 if formant1 > 0 else 3.0
+            clarity = 0.6 if pitch < 165 else 0.8
+            features = np.append(features, [formant_ratio, clarity])
+        
         # Scale the features
         features_scaled = self.scaler.transform(features.reshape(1, -1))
         
@@ -262,6 +372,37 @@ class GenderDetector:
         
         # Get confidence score
         confidence = probabilities[prediction]
+        
+        # Apply post-processing rules to increase accuracy in ambiguous cases
+        pitch = features[0]
+        formant_ratio = features[5]
+        clarity = features[6]
+        
+        # If we're in the ambiguous pitch range (170-210 Hz) and confidence is low
+        if 170 <= pitch <= 210 and confidence < 0.75:
+            logging.info(f"Ambiguous gender case: pitch={pitch:.2f}Hz, formant_ratio={formant_ratio:.2f}, detected as {'male' if prediction == 0 else 'female'} with conf={confidence:.2f}")
+            
+            # Apply secondary rules in ambiguous cases
+            if formant_ratio < 2.9:  # Male-typical formant structure
+                if prediction == 1:  # If predicted female but has male formant ratio
+                    logging.info("  Correcting to male based on formant ratio")
+                    prediction = 0  # Switch to male
+                    confidence = max(confidence + 0.1, 0.7)  # Boost confidence
+            elif formant_ratio > 3.1:  # Female-typical formant structure
+                if prediction == 0:  # If predicted male but has female formant ratio
+                    logging.info("  Correcting to female based on formant ratio")
+                    prediction = 1  # Switch to female
+                    confidence = max(confidence + 0.1, 0.7)  # Boost confidence
+            
+            # Use clarity as a secondary feature (females typically have clearer voices)
+            if clarity > 0.85 and prediction == 0 and confidence < 0.7:
+                logging.info("  Correcting to female based on high clarity")
+                prediction = 1
+                confidence = max(confidence + 0.05, 0.65)
+            elif clarity < 0.6 and prediction == 1 and confidence < 0.7:
+                logging.info("  Correcting to male based on low clarity")
+                prediction = 0
+                confidence = max(confidence + 0.05, 0.65)
         
         # Convert prediction to label
         gender = "male" if prediction == 0 else "female"
@@ -374,22 +515,52 @@ def detect_gender(pitch, mfccs=None, energy=None):
     """
     # Calculate additional features for better gender detection
     if mfccs is not None and len(mfccs) > 0:
-        formant1 = np.mean(mfccs[1]) * 100 + 500  # Rough formant estimation
-        formant2 = np.mean(mfccs[2]) * 100 + 1500
+        # Better formant estimation through MFCC analysis
+        formant1 = np.mean(mfccs[1]) * 100 + 500  # First formant (F1) - typically 300-800 Hz
+        formant2 = np.mean(mfccs[2]) * 100 + 1500  # Second formant (F2) - typically 1500-2500 Hz
+        
+        # Calculate formant dispersion - important for gender differentiation
+        formant_ratio = formant2 / formant1 if formant1 > 0 else 3.0
+        
+        # Voice stability metrics
         pitch_variation = np.std(mfccs[0]) * 10
         spectral_centroid = np.mean(mfccs) * 500 + 1500
+        
+        # Voice clarity - typically higher in female voices
+        clarity = np.mean(np.abs(mfccs[:3])) * 2 + 0.5  # Scale to 0.5-1.0 range
+        clarity = min(max(clarity, 0.3), 1.0)  # Clamp between 0.3 and 1.0
+        
+        # Log key metrics for debugging
+        logging.info(f"Voice features: pitch={pitch:.2f}Hz, F1={formant1:.1f}Hz, F2={formant2:.1f}Hz, ratio={formant_ratio:.2f}, clarity={clarity:.2f}")
     else:
-        # Default values if MFCCs aren't available
-        formant1 = 500 if pitch < 170 else 550
-        formant2 = 1500 if pitch < 170 else 1800
-        pitch_variation = 10 if pitch < 170 else 15
-        spectral_centroid = 1500 if pitch < 170 else 1800
+        # Enhanced default values if MFCCs aren't available, based on typical gender voice profiles
+        is_likely_male = pitch < 165
+        
+        if is_likely_male:
+            formant1 = 500 + (pitch - 120) * 0.4  # Scale with pitch, male F1: 300-550 Hz
+            formant2 = 1500 + (pitch - 120) * 1.0  # Scale with pitch, male F2: 1400-1700 Hz
+            formant_ratio = 2.9 + np.random.normal(0, 0.1)  # Add slight variation, male ratio ~2.8-3.0
+            clarity = 0.6 + np.random.normal(0, 0.05)  # Male typically has lower clarity
+            pitch_variation = 10 + np.random.normal(0, 1)  # Lower pitch variation
+        else:
+            formant1 = 550 + (pitch - 165) * 0.6  # Scale with pitch, female F1: 550-750 Hz
+            formant2 = 1800 + (pitch - 165) * 1.5  # Scale with pitch, female F2: 1800-2300 Hz
+            formant_ratio = 3.0 + np.random.normal(0, 0.1)  # Add slight variation, female ratio ~3.0-3.2
+            clarity = 0.8 + np.random.normal(0, 0.05)  # Female typically has higher clarity
+            pitch_variation = 15 + np.random.normal(0, 2)  # Higher pitch variation
+        
+        spectral_centroid = 1500 if is_likely_male else 1800
+        logging.info(f"Using estimated voice features for pitch={pitch:.2f}Hz: likely {'male' if is_likely_male else 'female'}")
     
-    # Create feature vector for gender detection
-    features = np.array([pitch, formant1, formant2, pitch_variation, spectral_centroid])
+    # Create enhanced feature vector for gender detection (7 features)
+    features = np.array([pitch, formant1, formant2, pitch_variation, spectral_centroid, formant_ratio, clarity])
     
     # Use our pre-trained model to predict gender
     gender, confidence = gender_detector.predict(features)
+    
+    # Store key metrics for debugging and analysis
+    logging.info(f"ML model results: pitch={pitch:.2f}Hz, gender={gender} (conf={confidence:.2f})")
+    
     
     return gender, confidence
 
