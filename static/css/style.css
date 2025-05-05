@@ -1,0 +1,59 @@
+/* Custom styles for the Audio Emotion Detector */
+
+/* Upload box styling */
+.upload-box {
+    border: 2px dashed #6c757d;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-box:hover {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Animation for the upload icon */
+.fa-cloud-upload-alt {
+    transition: transform 0.3s ease;
+}
+
+.upload-box:hover .fa-cloud-upload-alt {
+    transform: translateY(-5px);
+}
+
+/* Styling for the progress bars */
+.progress {
+    height: 25px;
+    background-color: #343a40;
+}
+
+.progress-bar {
+    line-height: 25px;
+    font-weight: bold;
+}
+
+/* Improve card shadows for better depth */
+.card {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Improve spacing for lists in cards */
+.card ul, .card ol {
+    padding-left: 1.5rem;
+}
+
+.card li {
+    margin-bottom: 0.5rem;
+}
+
+/* Footer styling */
+.footer {
+    margin-top: 2rem;
+    border-top: 1px solid #343a40;
+}

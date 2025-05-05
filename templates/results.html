@@ -1,0 +1,160 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header text-center">
+                <h2><i class="fas fa-chart-pie me-2"></i>Emotion Analysis Results</h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-check-circle me-2"></i>Analysis Complete</h5>
+                    <p>We've analyzed your audio file and detected the following emotions:</p>
+                </div>
+                
+                <div class="file-info mb-4">
+                    <h5><i class="fas fa-file-audio me-2"></i>File Information</h5>
+                    <table class="table table-dark">
+                        <tbody>
+                            <tr>
+                                <th scope="row" style="width: 30%">Filename</th>
+                                <td>{{ filename }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-list-ol me-2"></i>Emotion Scores</h5>
+                        <table class="table table-dark">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Emotion</th>
+                                    <th scope="col">Score</th>
+                                    <th scope="col">Visualization</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emotion, score in emotions.items() %}
+                                <tr>
+                                    <td>{{ emotion|capitalize }}</td>
+                                    <td>{{ score }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar 
+                                                {% if emotion == 'happy' %}bg-success
+                                                {% elif emotion == 'sad' %}bg-info
+                                                {% elif emotion == 'angry' %}bg-danger
+                                                {% elif emotion == 'fearful' %}bg-warning
+                                                {% else %}bg-secondary{% endif %}" 
+                                                role="progressbar" 
+                                                style="width: {{ (score * 100)|int }}%" 
+                                                aria-valuenow="{{ (score * 100)|int }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100">
+                                                {{ (score * 100)|int }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-chart-pie me-2"></i>Emotion Distribution</h5>
+                        <canvas id="emotionChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-dark border-secondary mt-4">
+            <div class="card-header">
+                <h4><i class="fas fa-info-circle me-2"></i>What Do These Results Mean?</h4>
+            </div>
+            <div class="card-body">
+                <p>The emotion analysis detects various emotional states in the audio:</p>
+                <ul>
+                    <li><strong>Happy:</strong> Positive emotional tone, often with higher pitch and energy.</li>
+                    <li><strong>Sad:</strong> Lower energy, sometimes with slower speech rate and lower pitch.</li>
+                    <li><strong>Angry:</strong> Higher energy, faster speech rate, and increased intensity.</li>
+                    <li><strong>Neutral:</strong> Balanced emotional tone, typically with steady pitch and rhythm.</li>
+                    <li><strong>Fearful:</strong> Often characterized by trembling voice, higher pitch, and irregular rhythm.</li>
+                </ul>
+                <p>The scores represent the probability or intensity of each emotion detected in the audio file.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Prepare data for the chart
+        const emotions = {{ emotions|tojson }};
+        const labels = Object.keys(emotions).map(emotion => emotion.charAt(0).toUpperCase() + emotion.slice(1));
+        const scores = Object.values(emotions);
+        
+        // Define colors for each emotion
+        const backgroundColors = {
+            'Happy': 'rgba(40, 167, 69, 0.7)',  // Green
+            'Sad': 'rgba(23, 162, 184, 0.7)',   // Cyan
+            'Angry': 'rgba(220, 53, 69, 0.7)',  // Red
+            'Neutral': 'rgba(108, 117, 125, 0.7)', // Gray
+            'Fearful': 'rgba(255, 193, 7, 0.7)' // Yellow
+        };
+        
+        // Create the colors array in the same order as labels
+        const colors = labels.map(label => backgroundColors[label] || 'rgba(108, 117, 125, 0.7)');
+        
+        // Create the chart
+        const ctx = document.getElementById('emotionChart').getContext('2d');
+        const emotionChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: scores,
+                    backgroundColor: colors,
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'white',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.formattedValue;
+                                return `${label}: ${value}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header text-center">
+                <h2><i class="fas fa-microphone-alt me-2"></i>Audio Emotion Detector</h2>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-center mb-4">
+                    Upload an audio file to detect emotions in speech.
+                    We'll analyze your audio and tell you what emotions we detect.
+                </p>
+                
+                <div class="upload-container mb-4">
+                    <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" class="text-center" id="upload-form">
+                        <div class="upload-box p-5 mb-3 border border-secondary rounded">
+                            <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                            <h4>Drag and drop files here</h4>
+                            <p>or</p>
+                            <div class="mb-3">
+                                <label for="file" class="form-label visually-hidden">Choose file</label>
+                                <input class="form-control" type="file" id="file" name="file" accept=".mp3,.wav,.mp4">
+                            </div>
+                            <small class="text-muted">Supported formats: MP3, WAV, MP4</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload and Analyze
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle me-2"></i>How it works</h5>
+                    <ol>
+                        <li>Upload an audio file (MP3, WAV, or MP4)</li>
+                        <li>Our system extracts audio features</li>
+                        <li>Our emotion detection model analyzes the audio</li>
+                        <li>View the detected emotions in the results</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-dark border-secondary mt-4">
+            <div class="card-header">
+                <h4><i class="fas fa-lightbulb me-2"></i>Features</h4>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="fas fa-file-audio fa-2x mb-2 text-primary"></i>
+                            <h5>Multiple Formats</h5>
+                            <p>Support for MP3, WAV, and MP4 files</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="fas fa-chart-bar fa-2x mb-2 text-success"></i>
+                            <h5>Emotion Analysis</h5>
+                            <p>Detect emotions like happy, sad, angry, etc.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="fas fa-tachometer-alt fa-2x mb-2 text-warning"></i>
+                            <h5>Fast Processing</h5>
+                            <p>Quick results with visualizations</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle drag and drop functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadBox = document.querySelector('.upload-box');
+        const fileInput = document.getElementById('file');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadBox.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            uploadBox.classList.add('border-primary');
+        }
+        
+        function unhighlight() {
+            uploadBox.classList.remove('border-primary');
+        }
+        
+        uploadBox.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            
+            // Display file name
+            if (files.length > 0) {
+                const fileName = document.createElement('p');
+                fileName.textContent = `Selected file: ${files[0].name}`;
+                fileName.classList.add('mt-2', 'text-info');
+                
+                // Remove any existing file name
+                const existingFileName = uploadBox.querySelector('.text-info');
+                if (existingFileName) {
+                    existingFileName.remove();
+                }
+                
+                uploadBox.appendChild(fileName);
+            }
+        }
+        
+        // Also update display when file is selected via the input
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const fileName = document.createElement('p');
+                fileName.textContent = `Selected file: ${this.files[0].name}`;
+                fileName.classList.add('mt-2', 'text-info');
+                
+                // Remove any existing file name
+                const existingFileName = uploadBox.querySelector('.text-info');
+                if (existingFileName) {
+                    existingFileName.remove();
+                }
+                
+                uploadBox.appendChild(fileName);
+            }
+        });
+    });
+</script>
+{% endblock %}
