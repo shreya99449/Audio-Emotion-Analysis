@@ -19,6 +19,22 @@ This document provides solutions to common issues you might encounter when runni
    pip install librosa --no-cache-dir
    ```
 
+### Python 3.12 Compatibility Issues
+
+**Issue**: Error like `AttributeError: module 'pkgutil' has no attribute 'ImpImporter'` when installing with Python 3.12
+
+**Solution**:
+1. Use Python 3.11 instead (recommended)
+2. If you must use Python 3.12, try these fixes:
+   ```
+   # Update setuptools first
+   pip install --upgrade setuptools>=69.0.0
+   
+   # Then try installing with the --pre flag
+   pip install --pre -r requirements_for_vscode.txt
+   ```
+3. See the detailed VSCODE_SETUP.md file for complete instructions
+
 ### Missing FFmpeg (Audio Processing)
 
 **Issue**: Error like `RuntimeError: FFmpeg not found`
