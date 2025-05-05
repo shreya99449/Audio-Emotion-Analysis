@@ -71,3 +71,9 @@ This Flask web application allows users to upload audio files and perform compre
 - Include user history tracking
 - Implement more sophisticated gender detection algorithms
 - Add audio playback on the results page
+
+## Technical Notes
+
+- Plot images are saved to the static/plots directory rather than being embedded in the session cookie to avoid size limitations
+- Voice characteristics are calculated using a combination of time-domain and frequency-domain features
+- The application is designed to gracefully handle audio files of various quality and formats

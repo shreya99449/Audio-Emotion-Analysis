@@ -160,42 +160,42 @@
                 </div>
 
                 <!-- Audio Visualization Section -->
-                {% if plots %}
+                {% if plots_urls %}
                 <div class="audio-visualizations mb-4">
                     <h5><i class="fas fa-wave-square me-2"></i>Audio Visualizations</h5>
                     <ul class="nav nav-tabs" id="audioVisualizationTabs" role="tablist">
-                        {% if 'waveform' in plots %}
+                        {% if 'waveform' in plots_urls %}
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="waveform-tab" data-bs-toggle="tab" data-bs-target="#waveform" type="button" role="tab" aria-controls="waveform" aria-selected="true">Waveform</button>
                         </li>
                         {% endif %}
-                        {% if 'spectrogram' in plots %}
+                        {% if 'spectrogram' in plots_urls %}
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="spectrogram-tab" data-bs-toggle="tab" data-bs-target="#spectrogram" type="button" role="tab" aria-controls="spectrogram" aria-selected="false">Spectrogram</button>
                         </li>
                         {% endif %}
-                        {% if 'mfcc' in plots %}
+                        {% if 'mfcc' in plots_urls %}
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="mfcc-tab" data-bs-toggle="tab" data-bs-target="#mfcc" type="button" role="tab" aria-controls="mfcc" aria-selected="false">MFCC</button>
                         </li>
                         {% endif %}
                     </ul>
                     <div class="tab-content p-3 border border-secondary" id="audioVisualizationTabContent">
-                        {% if 'waveform' in plots %}
+                        {% if 'waveform' in plots_urls %}
                         <div class="tab-pane fade show active text-center" id="waveform" role="tabpanel" aria-labelledby="waveform-tab">
-                            <img src="data:image/png;base64,{{ plots.waveform }}" alt="Audio Waveform" class="img-fluid">
+                            <img src="{{ plots_urls.waveform }}" alt="Audio Waveform" class="img-fluid">
                             <p class="text-secondary mt-2">The waveform shows the amplitude (loudness) of sound over time</p>
                         </div>
                         {% endif %}
-                        {% if 'spectrogram' in plots %}
+                        {% if 'spectrogram' in plots_urls %}
                         <div class="tab-pane fade text-center" id="spectrogram" role="tabpanel" aria-labelledby="spectrogram-tab">
-                            <img src="data:image/png;base64,{{ plots.spectrogram }}" alt="Audio Spectrogram" class="img-fluid">
+                            <img src="{{ plots_urls.spectrogram }}" alt="Audio Spectrogram" class="img-fluid">
                             <p class="text-secondary mt-2">The spectrogram displays frequency content over time, revealing tonal patterns</p>
                         </div>
                         {% endif %}
-                        {% if 'mfcc' in plots %}
+                        {% if 'mfcc' in plots_urls %}
                         <div class="tab-pane fade text-center" id="mfcc" role="tabpanel" aria-labelledby="mfcc-tab">
-                            <img src="data:image/png;base64,{{ plots.mfcc }}" alt="MFCC Visualization" class="img-fluid">
+                            <img src="{{ plots_urls.mfcc }}" alt="MFCC Visualization" class="img-fluid">
                             <p class="text-secondary mt-2">MFCCs (Mel-Frequency Cepstral Coefficients) represent vocal characteristics similar to how humans perceive sound</p>
                         </div>
                         {% endif %}
