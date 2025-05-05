@@ -367,9 +367,53 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
-{% endblock %}
+                </div>
+                
+                <!-- Activity Recommendations Section -->
+                <div class="activity-recommendations mb-4">
+                    <h5><i class="fas fa-tasks me-2"></i>Personalized Activity Recommendations</h5>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>Based on your detected mood, we recommend these activities to enhance your well-being:
+                    </div>
+                    
+                    {% if recommendations %}
+                    <div class="row row-cols-1 row-cols-md-3 g-4">
+                        {% for recommendation in recommendations %}
+                        <div class="col">
+                            <div class="card h-100 bg-dark border-secondary">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas 
+                                        {% if 'meditate' in recommendation|lower or 'breathing' in recommendation|lower %}fa-om
+                                        {% elif 'listen' in recommendation|lower or 'music' in recommendation|lower %}fa-music
+                                        {% elif 'exercise' in recommendation|lower or 'walk' in recommendation|lower %}fa-running
+                                        {% elif 'journal' in recommendation|lower or 'write' in recommendation|lower %}fa-pen-fancy
+                                        {% elif 'socialize' in recommendation|lower or 'friend' in recommendation|lower %}fa-users
+                                        {% elif 'hobby' in recommendation|lower or 'creative' in recommendation|lower %}fa-palette
+                                        {% elif 'nature' in recommendation|lower or 'outside' in recommendation|lower %}fa-tree
+                                        {% elif 'sleep' in recommendation|lower or 'rest' in recommendation|lower %}fa-bed
+                                        {% else %}fa-star
+                                        {% endif %} me-2"></i>
+                                        {{ recommendation.split(':')[0] if ':' in recommendation else recommendation }}
+                                    </h5>
+                                    <p class="card-text">
+                                        {% if ':' in recommendation %}
+                                            {{ recommendation.split(':', 1)[1] }}
+                                        {% else %}
+                                            A recommended activity based on your emotional profile.
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>No specific recommendations available for your emotional profile.
+                    </div>
+                    {% endif %}
+                </div>
 
 {% block scripts %}
 <script>
