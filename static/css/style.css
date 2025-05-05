@@ -1,16 +1,46 @@
 /* Custom styles for the Audio Emotion Detector */
 
-/* Upload box styling */
+/* Add a subtle gradient background to the entire page */
+body {
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    background-attachment: fixed;
+}
+
+/* Custom gradient header for cards */
+.card-header.bg-gradient {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 1.5rem 1rem;
+    border-radius: 5px 5px 0 0;
+}
+
+/* Upload box styling with colorful gradient */
 .upload-box {
-    border: 2px dashed #6c757d;
-    border-radius: 5px;
+    border: 3px dashed rgba(106, 17, 203, 0.5);
+    border-radius: 15px;
     transition: all 0.3s ease;
     cursor: pointer;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 2rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.upload-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    z-index: -1;
 }
 
 .upload-box:hover {
-    border-color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.05);
+    border-color: #6a11cb;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(106, 17, 203, 0.2);
 }
 
 /* Animation for the upload icon */
@@ -33,14 +63,42 @@
     font-weight: bold;
 }
 
-/* Improve card shadows for better depth */
+/* Colorful gradient card styling */
 .card {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    border: none;
+    overflow: hidden;
 }
 
 .card:hover {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
+}
+
+/* Gradient buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #6a11cb, #2575fc) !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(106, 17, 203, 0.4) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.6) !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #11998e, #38ef7d) !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(17, 153, 142, 0.6) !important;
 }
 
 /* Improve spacing for lists in cards */
@@ -55,7 +113,35 @@
 /* Footer styling */
 .footer {
     margin-top: 2rem;
-    border-top: 1px solid #343a40;
+    border: none;
+}
+
+/* Colorful gradient headings */
+h1, h2, h3, h4, h5, h6 {
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+}
+
+/* Colorful section headers */
+.section-header {
+    position: relative;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+.section-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 4px;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    border-radius: 4px;
 }
 
 /* Custom background colors for additional emotions */

@@ -15,9 +15,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4" style="background: linear-gradient(135deg, #12134d, #232a5c);">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
+            <a class="navbar-brand" href="{{ url_for('index') }}" style="font-weight: 700; background: linear-gradient(135deg, #8844ee, #4488ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                 <i class="fas fa-music me-2"></i>Audio Emotion Detector
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -28,19 +28,19 @@
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">
-                            <i class="fas fa-home me-1"></i>Home
+                            <i class="fas fa-home me-1 text-info"></i>Home
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('history') }}">
-                            <i class="fas fa-history me-1"></i>Analysis History
+                            <i class="fas fa-history me-1 text-success"></i>Analysis History
                         </a>
                     </li>
                 </ul>
                 <span class="navbar-text">
-                    <span class="badge bg-info">9 Emotions</span>
-                    <span class="badge bg-success ms-1">Gender Detection</span>
-                    <span class="badge bg-warning ms-1">Voice Analysis</span>
+                    <span class="badge bg-gradient p-2" style="background: linear-gradient(135deg, #6a11cb, #2575fc);">9 Emotions</span>
+                    <span class="badge bg-gradient p-2 ms-1" style="background: linear-gradient(135deg, #ff416c, #ff4b2b);">Voice Analysis</span>
+                    <span class="badge bg-gradient p-2 ms-1" style="background: linear-gradient(135deg, #11998e, #38ef7d);">AI Powered</span>
                 </span>
             </div>
         </div>
@@ -63,9 +63,14 @@
         {% block content %}{% endblock %}
     </div>
 
-    <footer class="footer mt-5 py-3 bg-dark">
+    <footer class="footer mt-5 py-3" style="background: linear-gradient(135deg, #12134d, #232a5c);">
         <div class="container text-center">
-            <span class="text-muted">© 2023 Audio Emotion Detector</span>
+            <div class="py-2">
+                <span class="badge bg-gradient p-2 me-1" style="background: linear-gradient(135deg, #6a11cb, #2575fc);"><i class="fas fa-brain me-1"></i>AI</span>
+                <span class="badge bg-gradient p-2 me-1" style="background: linear-gradient(135deg, #ff416c, #ff4b2b);"><i class="fas fa-music me-1"></i>Audio</span>
+                <span class="badge bg-gradient p-2 me-1" style="background: linear-gradient(135deg, #11998e, #38ef7d);"><i class="fas fa-smile me-1"></i>Emotions</span>
+            </div>
+            <span class="text-light">© 2023 Audio Emotion Detector - Voice Analysis AI</span>
         </div>
     </footer>
 
