@@ -26,8 +26,10 @@
                                 <td>
                                     {% if gender == 'male' %}
                                         <i class="fas fa-male text-info me-2"></i>Male
+                                        <span class="badge bg-info ms-1">{{ (gender_confidence * 100)|int }}% confidence</span>
                                     {% elif gender == 'female' %}
                                         <i class="fas fa-female text-danger me-2"></i>Female
+                                        <span class="badge bg-danger ms-1">{{ (gender_confidence * 100)|int }}% confidence</span>
                                     {% else %}
                                         <i class="fas fa-question text-warning me-2"></i>Unknown
                                     {% endif %}

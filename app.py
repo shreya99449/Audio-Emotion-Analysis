@@ -1,6 +1,7 @@
 import os
 import logging
 import base64
+import json
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.utils import secure_filename
@@ -60,8 +61,8 @@ def upload_file():
         file.save(filepath)
         
         try:
-            # Process audio file and get emotions, gender, voice features and plots
-            emotions, gender, voice_features, plots = process_audio_file(filepath)
+            # Process audio file and get emotions, gender, voice features, plots, and gender confidence
+            emotions, gender, voice_features, plots, gender_confidence = process_audio_file(filepath)
             
             # Store the results in session for the results page
             # Save plots to static directory instead of session to avoid cookie size limits
@@ -87,11 +88,33 @@ def upload_file():
                     except Exception as e:
                         logging.error(f"Error saving plot {plot_name}: {str(e)}")
             
-            # Store other results in session
+            # Create a record for history tracking
+            analysis_record = {
+                'filename': filename,
+                'emotions': emotions,
+                'gender': gender,
+                'gender_confidence': round(float(gender_confidence), 2),
+                'voice_features': voice_features,
+                'plots_urls': plots_urls,
+                'upload_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'timestamp': datetime.now().timestamp()
+            }
+            
+            # Initialize history in session if not present
+            if 'history' not in session:
+                session['history'] = []
+            
+            # Add current analysis to history (maximum 10 entries)
+            history = session['history']
+            history.insert(0, analysis_record)  # Add at the beginning (most recent first)
+            session['history'] = history[:10]  # Keep only the 10 most recent entries
+            
+            # Store current results in session
             session['filename'] = filename
             session['emotions'] = emotions
             session['filepath'] = filepath
             session['gender'] = gender
+            session['gender_confidence'] = round(float(gender_confidence), 2)
             session['voice_features'] = voice_features
             session['plots_urls'] = plots_urls  # Store URLs instead of actual plot data
             session['upload_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -114,17 +137,42 @@ def results():
     filename = session.get('filename')
     emotions = session.get('emotions')
     gender = session.get('gender', 'unknown')
+    gender_confidence = session.get('gender_confidence', 0.0)
     upload_date = session.get('upload_date', '')
     voice_features = session.get('voice_features', {})
     plots_urls = session.get('plots_urls', {})
+    history = session.get('history', [])
     
     return render_template('results.html', 
                            filename=filename, 
                            emotions=emotions, 
-                           gender=gender, 
+                           gender=gender,
+                           gender_confidence=gender_confidence,
                            upload_date=upload_date,
                            voice_features=voice_features,
-                           plots_urls=plots_urls)
+                           plots_urls=plots_urls,
+                           history=history)
+
+# Add history route
+@app.route('/history')
+def history():
+    # Get history from session
+    history = session.get('history', [])
+    
+    if not history:
+        flash('No history available', 'info')
+        return redirect(url_for('index'))
+    
+    return render_template('history.html', history=history)
+
+@app.route('/clear_history')
+def clear_history():
+    # Clear history from session
+    if 'history' in session:
+        session.pop('history')
+        flash('History cleared', 'success')
+    
+    return redirect(url_for('index'))
 
 # No database initialization needed
 

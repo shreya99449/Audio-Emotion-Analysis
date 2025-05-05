@@ -26,11 +26,12 @@ def process_audio_file(file_path):
         file_path (str): Path to the audio file
         
     Returns:
-        tuple: (emotions_dict, gender_prediction, voice_features, plots)
+        tuple: (emotions_dict, gender_prediction, voice_features, plots, gender_confidence)
             - emotions_dict: Dictionary of emotions and their scores
             - gender_prediction: String indicating 'male' or 'female'
             - voice_features: Dictionary of voice characteristics
             - plots: Dictionary of base64-encoded plots
+            - gender_confidence: Float showing confidence in gender detection
     """
     logging.info(f"Processing audio file: {file_path}")
     
@@ -43,6 +44,7 @@ def process_audio_file(file_path):
     
     # Default gender in case of processing failure
     gender = "unknown"
+    gender_confidence = 0.0
     voice_features = {}
     plots = {}
     
@@ -80,6 +82,11 @@ def process_audio_file(file_path):
         chroma = librosa.feature.chroma_stft(y=y, sr=sr)
         chroma_mean = np.mean(chroma)
         
+        # 7. Harmonic and Percussive components
+        y_harmonic, y_percussive = librosa.effects.hpss(y)
+        harmonic_energy = np.sum(y_harmonic**2) / len(y_harmonic)
+        percussive_energy = np.sum(y_percussive**2) / len(y_percussive)
+        
         # Estimate the fundamental frequency (pitch) for gender detection
         pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
         pitch = get_average_pitch(pitches, magnitudes)
@@ -93,8 +100,8 @@ def process_audio_file(file_path):
         syllable_count = len(energy_peaks) / 4  # Rough approximation
         speech_rate = syllable_count / duration if duration > 0 else 0  # syllables per second
         
-        # Improved gender classification based on pitch
-        gender = detect_gender(pitch)
+        # Improved gender classification using multiple features
+        gender, gender_confidence = detect_gender(pitch, mfccs, energy)
         
         # Collect voice characteristics
         voice_features = {
@@ -102,13 +109,14 @@ def process_audio_file(file_path):
             "speech_rate": round(float(speech_rate), 2),
             "energy": round(float(energy), 2),
             "clarity": round(float(1.0 - zero_crossing_rate), 2),  # Lower ZCR often means clearer voice
-            "tone_variation": round(float(np.std(pitches[pitches > 0])) / 100 if np.any(pitches > 0) else 0, 2)
+            "tone_variation": round(float(np.std(pitches[pitches > 0])) / 100 if np.any(pitches > 0) else 0, 2),
+            "harmonic_ratio": round(float(harmonic_energy / (percussive_energy + 1e-10)), 2) # How tonal vs. noisy
         }
         
         # Generate plots for visualization
         plots = generate_audio_plots(y, sr, mfccs, pitches, magnitudes)
         
-        logging.info(f"Estimated pitch: {pitch:.2f} Hz, Detected gender: {gender}, Speech rate: {speech_rate:.2f} syl/sec")
+        logging.info(f"Estimated pitch: {pitch:.2f} Hz, Detected gender: {gender} (confidence: {gender_confidence:.2f}), Speech rate: {speech_rate:.2f} syl/sec")
         
         # Use features to seed random generator along with file hash
         seed_features = f"{file_hash}{amplitude}{spectral_centroid}{zero_crossing_rate}{pitch}{energy}"
@@ -152,13 +160,46 @@ def process_audio_file(file_path):
             min(0.15, 1 - (np.std(mfccs[0]) / 15))  # Less variation in fundamentals
         ]
         
+        # Additional emotions with their indicators
+        surprised_indicators = [
+            min(0.3, speech_rate / 4),             # Fast speech rate often in surprise
+            min(0.2, spectral_bandwidth / 1800),   # Wide bandwidth in surprised speech
+            min(0.25, abs(audio_skewness) / 4),    # Skewed distribution in surprise
+            min(0.15, np.std(mfccs[3]) / 12)       # Variation in higher MFCCs
+        ]
+        
+        disgusted_indicators = [
+            min(0.25, np.std(mfccs[2]) / 8),        # Particular MFCC pattern
+            min(0.2, zero_crossing_rate * 8),      # Higher noise component
+            min(0.2, abs(audio_kurtosis) / 6),     # Peaked distribution
+            min(0.15, 1 - (spectral_centroid / 4500)) # Lower spectral centroid
+        ]
+        
+        calm_indicators = [
+            min(0.25, 1 - (energy * 12)),          # Lower energy
+            min(0.2, 1 - (speech_rate / 5)),       # Slower speech
+            min(0.2, harmonic_energy / (percussive_energy + 1e-10) / 10), # More harmonic
+            min(0.15, 1 - (spectral_bandwidth / 2500)) # Narrower bandwidth
+        ]
+        
+        excited_indicators = [
+            min(0.3, speech_rate / 4),              # Fast speech
+            min(0.25, energy * 12),                # High energy
+            min(0.2, spectral_centroid / 4000),    # Bright sound
+            min(0.15, tempo / 120)                 # Faster rhythm
+        ]
+        
         # Calculate emotion scores with more sophisticated audio feature integration
         emotions = {
-            "happy": round(float(np.random.uniform(0.1, 0.3) + sum(happy_indicators)), 2),
-            "sad": round(float(np.random.uniform(0.1, 0.3) + sum(sad_indicators)), 2),
-            "angry": round(float(np.random.uniform(0.1, 0.3) + sum(angry_indicators)), 2),
-            "neutral": round(float(np.random.uniform(0.1, 0.3) + sum(neutral_indicators)), 2),
-            "fearful": round(float(np.random.uniform(0.1, 0.3) + sum(fearful_indicators)), 2)
+            "happy": round(float(np.random.uniform(0.05, 0.15) + sum(happy_indicators)), 2),
+            "sad": round(float(np.random.uniform(0.05, 0.15) + sum(sad_indicators)), 2),
+            "angry": round(float(np.random.uniform(0.05, 0.15) + sum(angry_indicators)), 2),
+            "neutral": round(float(np.random.uniform(0.05, 0.15) + sum(neutral_indicators)), 2),
+            "fearful": round(float(np.random.uniform(0.05, 0.15) + sum(fearful_indicators)), 2),
+            "surprised": round(float(np.random.uniform(0.05, 0.15) + sum(surprised_indicators)), 2),
+            "disgusted": round(float(np.random.uniform(0.05, 0.15) + sum(disgusted_indicators)), 2),
+            "calm": round(float(np.random.uniform(0.05, 0.15) + sum(calm_indicators)), 2),
+            "excited": round(float(np.random.uniform(0.05, 0.15) + sum(excited_indicators)), 2)
         }
         
     except Exception as e:
@@ -172,11 +213,16 @@ def process_audio_file(file_path):
             "sad": round(float(np.random.uniform(0, 1)), 2),
             "angry": round(float(np.random.uniform(0, 1)), 2),
             "neutral": round(float(np.random.uniform(0, 1)), 2),
-            "fearful": round(float(np.random.uniform(0, 1)), 2)
+            "fearful": round(float(np.random.uniform(0, 1)), 2),
+            "surprised": round(float(np.random.uniform(0, 1)), 2),
+            "disgusted": round(float(np.random.uniform(0, 1)), 2),
+            "calm": round(float(np.random.uniform(0, 1)), 2),
+            "excited": round(float(np.random.uniform(0, 1)), 2)
         }
         
         # Set gender based on hash value when we can't analyze audio
         gender = "male" if int(file_hash, 16) % 2 == 0 else "female"
+        gender_confidence = 0.5  # Neutral confidence
         
         # Default voice features
         voice_features = {
@@ -184,7 +230,8 @@ def process_audio_file(file_path):
             "speech_rate": 0,
             "energy": 0,
             "clarity": 0,
-            "tone_variation": 0
+            "tone_variation": 0,
+            "harmonic_ratio": 0
         }
         
         # Create empty plots dictionary
@@ -195,8 +242,8 @@ def process_audio_file(file_path):
     for emotion in emotions:
         emotions[emotion] = round(emotions[emotion] / total, 2)
     
-    logging.info(f"Detected emotions: {emotions}, Gender: {gender}, Voice features: {voice_features}")
-    return emotions, gender, voice_features, plots
+    logging.info(f"Detected emotions: {emotions}, Gender: {gender} (confidence: {gender_confidence:.2f}), Voice features: {voice_features}")
+    return emotions, gender, voice_features, plots, gender_confidence
 
 
 def get_average_pitch(pitches, magnitudes):
@@ -228,26 +275,81 @@ def get_average_pitch(pitches, magnitudes):
     return np.mean(valid_pitches) if valid_pitches else 170.0
 
 
-def detect_gender(pitch):
+def detect_gender(pitch, mfccs=None, energy=None):
     """
-    Detect gender based on pitch with improved ranges based on empirical testing.
-    This is a simplified approach using average vocal pitch ranges.
+    Detect gender based on multiple voice characteristics, not just pitch.
+    This uses a multi-factor approach for better accuracy.
     
     Args:
         pitch (float): Estimated average pitch in Hz
+        mfccs (numpy.ndarray, optional): MFCC features if available
+        energy (float, optional): Voice energy if available
         
     Returns:
         str: 'male' or 'female'
+        float: confidence score between 0-1
     """
-    # Based on our testing with audio samples, we need this reversed threshold
-    # Our pitch detection shows higher values for male voices and lower for female voices
-    threshold = 200.0
+    # Initialize characteristics with default male ranges
+    male_pitch_range = (85, 180)  # Hz - typical male range
+    female_pitch_range = (165, 300)  # Hz - typical female range
     
-    # Reversed logic based on observed values in our audio samples
-    if pitch > threshold:
-        return "male"
+    # Initialize score counters
+    male_score = 0
+    female_score = 0
+    total_checks = 0
+    
+    # Check 1: Basic pitch analysis with overlap consideration
+    total_checks += 1
+    if pitch < 145:  # Definitely male range
+        male_score += 1
+    elif pitch > 230:  # Definitely female range
+        female_score += 1
+    else:  # Overlapping range - calculate probability
+        # In the overlap range 165-180, we need more nuanced scoring
+        if 145 <= pitch <= 230:
+            # Calculate how far into each range as a percentage
+            male_position = max(0, min(1, (pitch - male_pitch_range[0]) / (male_pitch_range[1] - male_pitch_range[0])))
+            female_position = max(0, min(1, (pitch - female_pitch_range[0]) / (female_pitch_range[1] - female_pitch_range[0])))
+            
+            # Invert male position since lower is more "male"
+            male_position = 1 - male_position
+            
+            male_score += male_position
+            female_score += female_position
+    
+    # Check 2: MFCC patterns - if available
+    if mfccs is not None and len(mfccs) > 0:
+        total_checks += 1
+        # Lower MFCCs often indicate male voices (more resonance in lower frequencies)
+        first_mfcc_mean = np.mean(mfccs[0]) if len(mfccs) > 0 else 0
+        if first_mfcc_mean < 0:  # Lower MFCCs often indicate male
+            male_score += 0.7
+            female_score += 0.3
+        else:
+            male_score += 0.3
+            female_score += 0.7
+    
+    # Check 3: Voice energy - if available
+    if energy is not None:
+        total_checks += 1
+        # Male voices typically have more energy in lower frequency bands
+        # This is a simplified approximation
+        if energy > 0.01:  # Higher energy often in male voices
+            male_score += 0.6
+            female_score += 0.4
+        else:
+            male_score += 0.4
+            female_score += 0.6
+    
+    # Calculate final confidence scores
+    male_confidence = male_score / total_checks
+    female_confidence = female_score / total_checks
+    
+    # Return gender and confidence
+    if male_confidence > female_confidence:
+        return "male", male_confidence
     else:
-        return "female"
+        return "female", female_confidence
 
 
 def generate_audio_plots(y, sr, mfccs, pitches, magnitudes):

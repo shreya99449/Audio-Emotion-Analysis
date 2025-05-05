@@ -25,11 +25,23 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('history') }}">
+                            <i class="fas fa-history me-1"></i>Analysis History
+                        </a>
                     </li>
                 </ul>
+                <span class="navbar-text">
+                    <span class="badge bg-info">9 Emotions</span>
+                    <span class="badge bg-success ms-1">Gender Detection</span>
+                    <span class="badge bg-warning ms-1">Voice Analysis</span>
+                </span>
             </div>
         </div>
     </nav>
