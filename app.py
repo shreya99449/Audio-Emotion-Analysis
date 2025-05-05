@@ -115,6 +115,7 @@ def upload_file():
             session['emotions'] = emotions
             session['filepath'] = filepath
             session['age_estimate'] = age_estimate
+            session['age_confidence'] = 0.85  # Fixed confidence for age estimation
             session['recommendations'] = recommendations
             session['voice_features'] = voice_features
             session['plots_urls'] = plots_urls  # Store URLs instead of actual plot data
@@ -144,10 +145,14 @@ def results():
     plots_urls = session.get('plots_urls', {})
     history = session.get('history', [])
     
+    # Get age confidence value or default to 0.85 if not available
+    age_confidence = session.get('age_confidence', 0.85)
+    
     return render_template('results.html', 
                            filename=filename, 
                            emotions=emotions, 
                            age_estimate=age_estimate,
+                           age_confidence=age_confidence,
                            recommendations=recommendations,
                            upload_date=upload_date,
                            voice_features=voice_features,
@@ -249,6 +254,7 @@ def record_audio():
         session['emotions'] = emotions
         session['filepath'] = filepath
         session['age_estimate'] = age_estimate
+        session['age_confidence'] = 0.85  # Fixed confidence for age estimation
         session['recommendations'] = recommendations
         session['voice_features'] = voice_features
         session['plots_urls'] = plots_urls
