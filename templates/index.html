@@ -220,6 +220,145 @@
                 uploadBox.appendChild(fileName);
             }
         });
+        
+        // Audio Recording Functionality
+        const recordButton = document.getElementById('record-button');
+        const stopButton = document.getElementById('stop-button');
+        const analyzeButton = document.getElementById('analyze-button');
+        const recordStatus = document.getElementById('record-status');
+        const timerElement = document.getElementById('timer');
+        const timerDisplay = document.getElementById('timer-display');
+        const audioPlayback = document.getElementById('audio-playback');
+        const recordedAudio = document.getElementById('recorded-audio');
+        const micIcon = document.getElementById('mic-icon');
+        
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob;
+        let timerInterval;
+        let startTime;
+        
+        // Check if browser supports audio recording
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            recordButton.addEventListener('click', startRecording);
+            stopButton.addEventListener('click', stopRecording);
+            analyzeButton.addEventListener('click', analyzeRecording);
+        } else {
+            recordStatus.textContent = 'Your browser does not support audio recording.';
+            recordButton.disabled = true;
+        }
+        
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    // Update UI
+                    recordButton.style.display = 'none';
+                    stopButton.style.display = 'inline-block';
+                    recordStatus.textContent = 'Recording in progress...';
+                    timerElement.style.display = 'block';
+                    audioPlayback.style.display = 'none';
+                    analyzeButton.style.display = 'none';
+                    micIcon.classList.add('text-danger', 'fa-pulse');
+                    
+                    // Create media recorder
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    // Start recording
+                    mediaRecorder.start();
+                    
+                    // Start timer
+                    startTime = Date.now();
+                    timerInterval = setInterval(updateTimer, 1000);
+                    
+                    // Collect audio chunks
+                    mediaRecorder.addEventListener('dataavailable', event => {
+                        audioChunks.push(event.data);
+                    });
+                    
+                    // When recording stops
+                    mediaRecorder.addEventListener('stop', () => {
+                        // Create audio blob
+                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        
+                        // Create audio URL and set to audio element
+                        const audioURL = URL.createObjectURL(audioBlob);
+                        recordedAudio.src = audioURL;
+                        
+                        // Update UI
+                        audioPlayback.style.display = 'block';
+                        analyzeButton.style.display = 'inline-block';
+                        
+                        // Stop all tracks
+                        stream.getTracks().forEach(track => track.stop());
+                    });
+                })
+                .catch(error => {
+                    console.error('Error accessing microphone:', error);
+                    recordStatus.textContent = 'Error accessing microphone. Please make sure you have allowed microphone access.';
+                });
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                // Stop recording
+                mediaRecorder.stop();
+                
+                // Stop timer
+                clearInterval(timerInterval);
+                
+                // Update UI
+                recordButton.style.display = 'inline-block';
+                recordButton.textContent = 'Record Again';
+                stopButton.style.display = 'none';
+                recordStatus.textContent = 'Recording complete - listen and analyze';
+                micIcon.classList.remove('text-danger', 'fa-pulse');
+            }
+        }
+        
+        function updateTimer() {
+            const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+            const seconds = (elapsedTime % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+        }
+        
+        function analyzeRecording() {
+            if (!audioBlob) {
+                alert('No recording to analyze!');
+                return;
+            }
+            
+            // Create form data to send to server
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.wav');
+            
+            // Display loading state
+            analyzeButton.disabled = true;
+            analyzeButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+            
+            // Send to server
+            fetch('{{ url_for("record_audio") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    alert('Error analyzing recording: ' + data.error);
+                    analyzeButton.disabled = false;
+                    analyzeButton.innerHTML = '<i class="fas fa-brain me-2"></i>Analyze Recording';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error analyzing recording. Please try again.');
+                analyzeButton.disabled = false;
+                analyzeButton.innerHTML = '<i class="fas fa-brain me-2"></i>Analyze Recording';
+            });
+        }
     });
 </script>
 {% endblock %}

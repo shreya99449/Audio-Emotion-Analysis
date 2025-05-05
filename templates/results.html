@@ -10,7 +10,7 @@
             <div class="card-body">
                 <div class="alert alert-success">
                     <h5><i class="fas fa-check-circle me-2"></i>Analysis Complete</h5>
-                    <p>We've analyzed your audio file and detected voice characteristics, emotions, and gender:</p>
+                    <p>We've analyzed your audio file and detected voice characteristics, emotions, and age estimate:</p>
                 </div>
                 
                 <div class="file-info mb-4">
@@ -22,38 +22,10 @@
                                 <td>{{ filename }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Voice Gender</th>
+                                <th scope="row">Age Estimate</th>
                                 <td>
-                                    {% if gender == 'male' %}
-                                        <i class="fas fa-male text-info me-2"></i>Male
-                                        <div class="d-flex align-items-center mt-1">
-                                            <div class="progress flex-grow-1" style="height: 20px;">
-                                                <div class="progress-bar bg-info" 
-                                                     role="progressbar" 
-                                                     style="width: {{ (gender_confidence * 100)|int }}%"
-                                                     aria-valuenow="{{ (gender_confidence * 100)|int }}" 
-                                                     aria-valuemin="0" 
-                                                     aria-valuemax="100">
-                                                     {{ (gender_confidence * 100)|int }}%
-                                                </div>
-                                            </div>
-                                            <span class="ms-2 badge bg-secondary">ML confidence</span>
-                                        </div>
-                                    {% elif gender == 'female' %}
-                                        <i class="fas fa-female text-danger me-2"></i>Female
-                                        <div class="d-flex align-items-center mt-1">
-                                            <div class="progress flex-grow-1" style="height: 20px;">
-                                                <div class="progress-bar bg-danger" 
-                                                     role="progressbar" 
-                                                     style="width: {{ (gender_confidence * 100)|int }}%"
-                                                     aria-valuenow="{{ (gender_confidence * 100)|int }}" 
-                                                     aria-valuemin="0" 
-                                                     aria-valuemax="100">
-                                                     {{ (gender_confidence * 100)|int }}%
-                                                </div>
-                                            </div>
-                                            <span class="ms-2 badge bg-secondary">ML confidence</span>
-                                        </div>
+                                    {% if age_estimate %}
+                                        <i class="fas fa-user-clock text-info me-2"></i>{{ age_estimate }}
                                     {% else %}
                                         <i class="fas fa-question text-warning me-2"></i>Unknown
                                     {% endif %}
