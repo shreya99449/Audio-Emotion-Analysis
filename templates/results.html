@@ -26,10 +26,34 @@
                                 <td>
                                     {% if gender == 'male' %}
                                         <i class="fas fa-male text-info me-2"></i>Male
-                                        <span class="badge bg-info ms-1">{{ (gender_confidence * 100)|int }}% confidence</span>
+                                        <div class="d-flex align-items-center mt-1">
+                                            <div class="progress flex-grow-1" style="height: 20px;">
+                                                <div class="progress-bar bg-info" 
+                                                     role="progressbar" 
+                                                     style="width: {{ (gender_confidence * 100)|int }}%"
+                                                     aria-valuenow="{{ (gender_confidence * 100)|int }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                     {{ (gender_confidence * 100)|int }}%
+                                                </div>
+                                            </div>
+                                            <span class="ms-2 badge bg-secondary">ML confidence</span>
+                                        </div>
                                     {% elif gender == 'female' %}
                                         <i class="fas fa-female text-danger me-2"></i>Female
-                                        <span class="badge bg-danger ms-1">{{ (gender_confidence * 100)|int }}% confidence</span>
+                                        <div class="d-flex align-items-center mt-1">
+                                            <div class="progress flex-grow-1" style="height: 20px;">
+                                                <div class="progress-bar bg-danger" 
+                                                     role="progressbar" 
+                                                     style="width: {{ (gender_confidence * 100)|int }}%"
+                                                     aria-valuenow="{{ (gender_confidence * 100)|int }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                     {{ (gender_confidence * 100)|int }}%
+                                                </div>
+                                            </div>
+                                            <span class="ms-2 badge bg-secondary">ML confidence</span>
+                                        </div>
                                     {% else %}
                                         <i class="fas fa-question text-warning me-2"></i>Unknown
                                     {% endif %}
@@ -227,51 +251,94 @@
                 {% endif %}
                 
                 <!-- Emotion Analysis Section -->
-                <div class="row emotion-analysis mb-4">
-                    <div class="col-md-6">
-                        <h5><i class="fas fa-list-ol me-2"></i>Emotion Scores</h5>
-                        <table class="table table-dark">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Emotion</th>
-                                    <th scope="col">Score</th>
-                                    <th scope="col">Visualization</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for emotion, score in emotions.items() %}
-                                <tr>
-                                    <td>{{ emotion|capitalize }}</td>
-                                    <td>{{ score }}</td>
-                                    <td>
-                                        <div class="progress">
-                                            <div class="progress-bar 
-                                                {% if emotion == 'happy' %}bg-success
-                                                {% elif emotion == 'sad' %}bg-info
-                                                {% elif emotion == 'angry' %}bg-danger
-                                                {% elif emotion == 'fearful' %}bg-warning
-                                                {% elif emotion == 'surprised' %}bg-purple
-                                                {% elif emotion == 'disgusted' %}bg-indigo
-                                                {% elif emotion == 'calm' %}bg-teal
-                                                {% elif emotion == 'excited' %}bg-orange
-                                                {% else %}bg-secondary{% endif %}" 
-                                                role="progressbar" 
-                                                style="width: {{ (score * 100)|int }}%" 
-                                                aria-valuenow="{{ (score * 100)|int }}" 
-                                                aria-valuemin="0" 
-                                                aria-valuemax="100">
-                                                {{ (score * 100)|int }}%
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                <div class="emotion-analysis mb-4">
+                    <h5><i class="fas fa-brain me-2"></i>ML-Powered Emotion Detection</h5>
+                    <div class="alert alert-secondary">
+                        <i class="fas fa-info-circle me-2"></i>Our machine learning model analyzed <strong>9 distinct emotions</strong> in this recording, with results shown below.
                     </div>
-                    <div class="col-md-6">
-                        <h5><i class="fas fa-chart-pie me-2"></i>Emotion Distribution</h5>
-                        <canvas id="emotionChart" width="400" height="400"></canvas>
+                    <div class="row mb-3">
+                        <div class="col-12 mb-2">
+                            <h6 class="border-bottom pb-2"><i class="fas fa-star me-2"></i>Primary Emotion: 
+                                {% set primary_emotion = emotions|dictsort(by='value')|reverse|first %}
+                                <span class="badge 
+                                {% if primary_emotion[0] == 'happy' %}bg-success
+                                {% elif primary_emotion[0] == 'sad' %}bg-info
+                                {% elif primary_emotion[0] == 'angry' %}bg-danger
+                                {% elif primary_emotion[0] == 'fearful' %}bg-warning text-dark
+                                {% elif primary_emotion[0] == 'surprised' %}bg-primary
+                                {% elif primary_emotion[0] == 'disgusted' %}bg-secondary
+                                {% elif primary_emotion[0] == 'neutral' %}bg-light text-dark
+                                {% elif primary_emotion[0] == 'calm' %}bg-info text-dark
+                                {% elif primary_emotion[0] == 'excited' %}bg-warning
+                                {% else %}bg-secondary{% endif %}">{{ primary_emotion[0]|capitalize }}</span>
+                                <span class="text-muted">({{ (primary_emotion[1] * 100)|int }}% confidence)</span>
+                            </h6>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-list-ol me-2"></i>Emotion ML Model Results</h6>
+                            <table class="table table-dark">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" style="width: 25%">Emotion</th>
+                                        <th scope="col" style="width: 75%">ML Detection Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for emotion, score in emotions|dictsort(by='value')|reverse %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge 
+                                            {% if emotion == 'happy' %}bg-success
+                                            {% elif emotion == 'sad' %}bg-info
+                                            {% elif emotion == 'angry' %}bg-danger
+                                            {% elif emotion == 'fearful' %}bg-warning text-dark
+                                            {% elif emotion == 'surprised' %}bg-primary
+                                            {% elif emotion == 'disgusted' %}bg-secondary
+                                            {% elif emotion == 'neutral' %}bg-light text-dark
+                                            {% elif emotion == 'calm' %}bg-info text-dark
+                                            {% elif emotion == 'excited' %}bg-warning
+                                            {% else %}bg-secondary{% endif %}">
+                                                {{ emotion|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1" style="height: 24px;">
+                                                    <div class="progress-bar 
+                                                    {% if emotion == 'happy' %}bg-success
+                                                    {% elif emotion == 'sad' %}bg-info
+                                                    {% elif emotion == 'angry' %}bg-danger
+                                                    {% elif emotion == 'fearful' %}bg-warning
+                                                    {% elif emotion == 'surprised' %}bg-primary
+                                                    {% elif emotion == 'disgusted' %}bg-secondary
+                                                    {% elif emotion == 'neutral' %}bg-light text-dark
+                                                    {% elif emotion == 'calm' %}bg-info
+                                                    {% elif emotion == 'excited' %}bg-warning
+                                                    {% else %}bg-secondary{% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ (score * 100)|int }}%" 
+                                                    aria-valuenow="{{ (score * 100)|int }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                    {{ (score * 100)|int }}%
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-chart-pie me-2"></i>Emotion Distribution</h6>
+                            <canvas id="emotionChart" width="400" height="400"></canvas>
+                            <div class="alert alert-dark mt-3" style="font-size: 0.9rem;">
+                                <i class="fas fa-info-circle me-2"></i>Our ML model was trained on acoustic patterns associated with different emotional states. The visualization shows the probability distribution across all emotions based on your audio's characteristics.
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
