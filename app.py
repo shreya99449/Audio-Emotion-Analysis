@@ -59,14 +59,16 @@ def upload_file():
         file.save(filepath)
         
         try:
-            # Process audio file and get emotions and gender
-            emotions, gender = process_audio_file(filepath)
+            # Process audio file and get emotions, gender, voice features and plots
+            emotions, gender, voice_features, plots = process_audio_file(filepath)
             
             # Store the results in session for the results page
             session['filename'] = filename
             session['emotions'] = emotions
             session['filepath'] = filepath
             session['gender'] = gender
+            session['voice_features'] = voice_features
+            session['plots'] = plots
             session['upload_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             return redirect(url_for('results'))
@@ -88,8 +90,16 @@ def results():
     emotions = session.get('emotions')
     gender = session.get('gender', 'unknown')
     upload_date = session.get('upload_date', '')
+    voice_features = session.get('voice_features', {})
+    plots = session.get('plots', {})
     
-    return render_template('results.html', filename=filename, emotions=emotions, gender=gender, upload_date=upload_date)
+    return render_template('results.html', 
+                           filename=filename, 
+                           emotions=emotions, 
+                           gender=gender, 
+                           upload_date=upload_date,
+                           voice_features=voice_features,
+                           plots=plots)
 
 # No database initialization needed
 

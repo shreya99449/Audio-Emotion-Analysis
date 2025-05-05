@@ -1,13 +1,16 @@
-# Audio Emotion Detector
+# Advanced Voice Analysis Application
 
-This Flask web application allows users to upload audio files and analyze them for emotional content and speaker gender detection. The application stores the uploaded files in a local 'uploads' directory and uses audio processing techniques to extract emotions and detect the gender of the speaker.
+This Flask web application allows users to upload audio files and perform comprehensive voice analysis including emotional content, speaker gender detection, and detailed voice characteristics. The application stores the uploaded files in a local 'uploads' directory and uses advanced audio processing techniques to extract a wide range of vocal features.
 
 ## Features
 
 - Upload audio files (MP3, WAV, MP4) via web interface
 - Emotion detection (happy, sad, angry, neutral, fearful)
 - Gender detection based on voice pitch analysis
-- Visualization of emotion distribution with charts
+- Voice characteristic analysis (pitch, speech rate, energy, clarity, tone variation)
+- Advanced audio visualizations (waveform, spectrogram, MFCC)
+- Voice profile interpretation based on detected characteristics
+- Comprehensive visualization of emotion distribution with charts
 - Session-based results storage
 - Mobile-responsive design with Bootstrap
 

@@ -4,3 +4,5 @@ numpy==2.2.5
 matplotlib==3.10.1
 librosa==0.11.0
 werkzeug==2.3.8
+scipy==1.12.0
+pandas==2.2.0
