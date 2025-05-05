@@ -943,10 +943,12 @@ dependencies = [
     { name = "flask" },
     { name = "flask-sqlalchemy" },
     { name = "gunicorn" },
+    { name = "joblib" },
     { name = "librosa" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "psycopg2-binary" },
+    { name = "scikit-learn" },
 ]
 
 [package.metadata]
@@ -955,10 +957,12 @@ requires-dist = [
     { name = "flask", specifier = ">=3.1.0" },
     { name = "flask-sqlalchemy", specifier = ">=3.1.1" },
     { name = "gunicorn", specifier = ">=23.0.0" },
+    { name = "joblib", specifier = ">=1.5.0" },
     { name = "librosa", specifier = ">=0.11.0" },
     { name = "matplotlib", specifier = ">=3.10.1" },
     { name = "numpy", specifier = ">=2.2.5" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
+    { name = "scikit-learn", specifier = ">=1.6.1" },
 ]
 
 [[package]]
