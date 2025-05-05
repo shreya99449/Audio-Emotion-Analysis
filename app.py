@@ -61,8 +61,8 @@ def upload_file():
         file.save(filepath)
         
         try:
-            # Process audio file and get emotions, gender, voice features, plots, and gender confidence
-            emotions, gender, voice_features, plots, gender_confidence = process_audio_file(filepath)
+            # Process audio file and get emotions, age, voice features, plots, and recommendations
+            emotions, age_estimate, voice_features, plots, recommendations = process_audio_file(filepath)
             
             # Store the results in session for the results page
             # Save plots to static directory instead of session to avoid cookie size limits
@@ -92,10 +92,11 @@ def upload_file():
             analysis_record = {
                 'filename': filename,
                 'emotions': emotions,
-                'gender': gender,
-                'gender_confidence': round(float(gender_confidence), 2),
+                'age_estimate': age_estimate,
+                'age_confidence': round(float(recommendations[0]), 2) if isinstance(recommendations[0], float) else 0.9,
                 'voice_features': voice_features,
                 'plots_urls': plots_urls,
+                'recommendations': recommendations,
                 'upload_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'timestamp': datetime.now().timestamp()
             }
@@ -113,8 +114,8 @@ def upload_file():
             session['filename'] = filename
             session['emotions'] = emotions
             session['filepath'] = filepath
-            session['gender'] = gender
-            session['gender_confidence'] = round(float(gender_confidence), 2)
+            session['age_estimate'] = age_estimate
+            session['recommendations'] = recommendations
             session['voice_features'] = voice_features
             session['plots_urls'] = plots_urls  # Store URLs instead of actual plot data
             session['upload_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -136,8 +137,8 @@ def results():
     
     filename = session.get('filename')
     emotions = session.get('emotions')
-    gender = session.get('gender', 'unknown')
-    gender_confidence = session.get('gender_confidence', 0.0)
+    age_estimate = session.get('age_estimate', 'unknown')
+    recommendations = session.get('recommendations', [])
     upload_date = session.get('upload_date', '')
     voice_features = session.get('voice_features', {})
     plots_urls = session.get('plots_urls', {})
@@ -146,8 +147,8 @@ def results():
     return render_template('results.html', 
                            filename=filename, 
                            emotions=emotions, 
-                           gender=gender,
-                           gender_confidence=gender_confidence,
+                           age_estimate=age_estimate,
+                           recommendations=recommendations,
                            upload_date=upload_date,
                            voice_features=voice_features,
                            plots_urls=plots_urls,
@@ -174,7 +175,90 @@ def clear_history():
     
     return redirect(url_for('index'))
 
-# No database initialization needed
+# Add voice recording capability
+@app.route('/record', methods=['POST'])
+def record_audio():
+    try:
+        # Create uploads directory if it doesn't exist
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        
+        # Get the audio data from the request
+        audio_data = request.files.get('audio')
+        
+        if not audio_data:
+            return json.dumps({'error': 'No audio data received'}), 400
+        
+        # Generate unique filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"recorded_{timestamp}.wav"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Save the audio file
+        audio_data.save(filepath)
+        
+        # Process the audio file
+        emotions, age_estimate, voice_features, plots, recommendations = process_audio_file(filepath)
+        
+        # Store results in session (similar to upload_file route)
+        plots_urls = {}
+        static_dir = os.path.join('static', 'plots')
+        os.makedirs(static_dir, exist_ok=True)
+        
+        # Generate unique identifiers for the plot files
+        plot_id = f"{timestamp}_recorded"
+        
+        # Save each plot as a file and store the URL
+        for plot_name, plot_data in plots.items():
+            if plot_data:  # Only process if we have plot data
+                plot_filename = f"{plot_name}_{plot_id}.png"
+                plot_path = os.path.join(static_dir, plot_filename)
+                
+                # Decode base64 and save as file
+                try:
+                    with open(plot_path, 'wb') as f:
+                        f.write(base64.b64decode(plot_data))
+                    plots_urls[plot_name] = f"/static/plots/{plot_filename}"
+                except Exception as e:
+                    logging.error(f"Error saving plot {plot_name}: {str(e)}")
+        
+        # Create a record for history tracking
+        analysis_record = {
+            'filename': filename,
+            'emotions': emotions,
+            'age_estimate': age_estimate,
+            'recommendations': recommendations,
+            'voice_features': voice_features,
+            'plots_urls': plots_urls,
+            'upload_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'timestamp': datetime.now().timestamp(),
+            'recorded': True  # Flag to indicate this was recorded not uploaded
+        }
+        
+        # Initialize history in session if not present
+        if 'history' not in session:
+            session['history'] = []
+        
+        # Add current analysis to history (maximum 10 entries)
+        history = session['history']
+        history.insert(0, analysis_record)  # Add at the beginning (most recent first)
+        session['history'] = history[:10]  # Keep only the 10 most recent entries
+        
+        # Store current results in session
+        session['filename'] = filename
+        session['emotions'] = emotions
+        session['filepath'] = filepath
+        session['age_estimate'] = age_estimate
+        session['recommendations'] = recommendations
+        session['voice_features'] = voice_features
+        session['plots_urls'] = plots_urls
+        session['upload_date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        session['recorded'] = True
+        
+        return json.dumps({'success': True, 'redirect': url_for('results')})
+    
+    except Exception as e:
+        logging.error(f"Error processing recorded audio: {str(e)}")
+        return json.dumps({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
