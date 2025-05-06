@@ -1,7 +1,5 @@
 # Advanced Voice Analysis Application with Machine Learning
 
-**UPDATE**: This application is now fully compatible with VS Code! Use the included setup tools and instructions to run it outside of Replit.
-
 This Flask web application allows users to upload audio files and perform sophisticated voice analysis using machine learning models. The application detects emotional content, speaker gender, and detailed voice characteristics with high accuracy. It stores the uploaded files in a local 'uploads' directory and uses advanced audio processing techniques to extract a wide range of vocal features.
 
 ## Features
@@ -45,7 +43,7 @@ This Flask web application allows users to upload audio files and perform sophis
 
 ### Installation
 
-1. Clone or download the repository from Replit
+1. Clone or download the repository.
 2. Open the project folder in VS Code
 3. Create a virtual environment (strongly recommended):
    ```bash
@@ -158,16 +156,7 @@ The application uses SQLite by default in VS Code, which doesn't require additio
 - Touch-friendly interface elements for mobile users
 - Real-time audio recording and visualization
 
-## Replit vs. VS Code Environment
 
-This application is designed to run smoothly in both Replit and VS Code environments, with some key differences:
-
-### Replit Environment
-- **Workflow Management**: Uses Replit's built-in workflow system to start the server
-- **Database**: Configured to use PostgreSQL database via environment variables
-- **Package Management**: Dependencies are managed through pyproject.toml
-- **Web Access**: Automatically exposed through Replit's domain
-- **Starting the App**: Click the Run button in Replit's interface
 
 ### VS Code Environment
 - **Workflow Management**: Uses the included run.py script to start the server
@@ -175,14 +164,3 @@ This application is designed to run smoothly in both Replit and VS Code environm
 - **Package Management**: Dependencies are installed through requirements_for_vscode.txt
 - **Web Access**: Accessible at localhost:5000 by default
 - **Starting the App**: Use `python run.py` command in terminal
-
-### Switching Between Environments
-If you've been developing in Replit and want to switch to VS Code:
-1. Export your project from Replit
-2. Follow the VS Code setup instructions above
-3. Run setup_vscode.py to configure the local environment
-
-If you've been developing in VS Code and want to use Replit:
-1. Import your project to Replit
-2. Make sure the correct packages are listed in pyproject.toml
-3. Use the Replit workflow to start the application
